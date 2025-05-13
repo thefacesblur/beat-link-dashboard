@@ -13,7 +13,7 @@ export default function SetTimeline({ history }) {
 
   return (
     <Box sx={{ mt: 3, p: 2, background: 'rgba(51, 51, 51, 0.8)', borderRadius: 3 }}>
-      <Typography variant="h6" gutterBottom>DJ Set Overview</Typography>
+      <Typography variant="h6" gutterBottom>Set Overview</Typography>
       <Box display="flex" alignItems="center" height={32} position="relative" minWidth={200} width="100%">
         {history.map((entry, i) => {
           const next = history[i + 1];
@@ -37,7 +37,7 @@ export default function SetTimeline({ history }) {
             >
               <Box
                 sx={{
-                  height: 24,
+                  height: 18,
                   width: `${widthPercent}%`,
                   bgcolor: i % 2 === 0 ? 'primary.main' : 'secondary.main',
                   opacity: 0.8,
@@ -51,8 +51,8 @@ export default function SetTimeline({ history }) {
         })}
       </Box>
       <Box display="flex" justifyContent="space-between" mt={1}>
-        <Typography variant="caption">{new Date(start).toLocaleTimeString()}</Typography>
-        <Typography variant="caption">{new Date(end).toLocaleTimeString()}</Typography>
+        <Typography variant="caption"> Start: {new Date(start).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</Typography>
+        <Typography variant="caption"> End: {new Date(end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' } )}</Typography>
       </Box>
     </Box>
   );
