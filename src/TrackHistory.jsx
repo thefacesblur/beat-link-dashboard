@@ -4,7 +4,7 @@ import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, Bo
 export default function TrackHistory({ history }) {
   if (!history.length) return null;
   return (
-    <Paper sx={{ mt: 4, p: 2, overflowX: 'auto' }}>
+    <Paper sx={{ mt: 3, p: 2, overflowX: 'auto', borderRadius: 3 }}>
       <Typography variant="h6" gutterBottom>Track History</Typography>
       <Box sx={{ minWidth: 320, maxWidth: '100%', overflowX: 'auto' }}>
         <Table size="small" sx={{ minWidth: 500 }}>
