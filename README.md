@@ -5,7 +5,8 @@ This is a React-based dashboard that integrates with Beat Link Trigger to displa
 
 Beat Link Trigger application can be found here: [https://github.com/Deep-Symmetry/beat-link-trigger](https://github.com/Deep-Symmetry/beat-link-trigger)
 
-![BeatLinkDashboard-Preview](https://github.com/user-attachments/assets/7e03d271-37b4-4279-aa72-7214b31bf322)
+![BeatLinkDashboard-Preview-2](https://github.com/user-attachments/assets/d24ca394-cc0b-44ec-932d-1dbd758c125e)
+
 
 ## Installation & Running
 
