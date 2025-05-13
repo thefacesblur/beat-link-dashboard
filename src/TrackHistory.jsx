@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, Box, Tabs, Tab } from '@mui/material';
 import TrackAnalytics from './TrackAnalytics';
+import { useSettings } from './SettingsContext';
 
 export default function TrackHistory({ history }) {
   const [tab, setTab] = useState(0);
+  const { analyticsEnabled, trackHistoryFields } = useSettings ? useSettings() : { analyticsEnabled: true, trackHistoryFields: ['Time','Deck','Artist','Title','BPM'] };
   if (!history.length) return null;
+
+  // Map field names to render logic
+  const fieldMap = {
+    'Time': entry => <TableCell sx={{ whiteSpace: 'nowrap', width: '100px' }}>{new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</TableCell>,
+    'Deck': entry => <TableCell sx={{ whiteSpace: 'nowrap', width: '100px' }}>{entry.player}</TableCell>,
+    'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 120, fontSize: { xs: '0.8rem', sm: '1rem' } }}>{entry.artist}</TableCell>,
+    'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 160 }}>{entry.title}</TableCell>,
+    'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
+  };
+
   return (
     <Paper sx={{ mt: 3, p: 2, overflowX: 'auto', borderRadius: 3 }}>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="History" />
-        <Tab label="Analytics" />
+        {analyticsEnabled && <Tab label="Analytics" />}
       </Tabs>
       {tab === 0 && (
         <Box sx={{ minWidth: 320, maxWidth: '100%', overflowX: 'auto' }}>
@@ -17,36 +29,22 @@ export default function TrackHistory({ history }) {
           <Table size="small" sx={{ minWidth: 500 }}>
             <TableHead>
               <TableRow>
-                <TableCell>Time</TableCell>
-                <TableCell>Deck</TableCell>
-                <TableCell>Artist</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>BPM</TableCell>
+                {trackHistoryFields.map(field => (
+                  <TableCell key={field}>{field}</TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {history.slice().reverse().map((entry, i) => (
                 <TableRow key={i}>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{new Date(entry.timestamp).toLocaleTimeString()}</TableCell>
-                  <TableCell>{entry.player}</TableCell>
-                  <TableCell
-                    sx={{
-                      wordBreak: 'break-word',
-                      maxWidth: 120,
-                      fontSize: { xs: '0.8rem', sm: '1rem' }
-                    }}
-                  >
-                    {entry.artist}
-                  </TableCell>
-                  <TableCell sx={{ wordBreak: 'break-word', maxWidth: 160 }}>{entry.title}</TableCell>
-                  <TableCell>{entry.bpm}</TableCell>
+                  {trackHistoryFields.map(field => fieldMap[field]?.(entry))}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Box>
       )}
-      {tab === 1 && <TrackAnalytics history={history} />}
+      {tab === 1 && analyticsEnabled && <TrackAnalytics history={history} />}
     </Paper>
   );
 }

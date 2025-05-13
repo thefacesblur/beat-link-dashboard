@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useSettings } from './SettingsContext';
 
 export default function useParamsData(pollInterval = 500) {
+  let contextInterval;
+  try {
+    contextInterval = useSettings()?.pollingInterval;
+  } catch (e) {}
+  const effectiveInterval = contextInterval || pollInterval;
+
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -17,7 +24,7 @@ export default function useParamsData(pollInterval = 500) {
       } catch (err) {
         if (isMounted) setError(err);
       }
-      timer = setTimeout(fetchData, pollInterval);
+      timer = setTimeout(fetchData, effectiveInterval);
     };
 
     fetchData();
@@ -25,7 +32,7 @@ export default function useParamsData(pollInterval = 500) {
       isMounted = false;
       if (timer) clearTimeout(timer);
     };
-  }, [pollInterval]);
+  }, [effectiveInterval]);
 
   return { data, error };
 }

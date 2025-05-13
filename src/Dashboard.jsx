@@ -262,7 +262,7 @@ function exportHistory(history, format) {
     content = history.map(entry =>
       `${new Date(entry.timestamp).toLocaleString()} | Deck ${entry.player} | ${entry.artist} - ${entry.title} | BPM: ${entry.bpm}`
     ).join('\n');
-    filename = 'track_history.txt';
+    filename = `track_history_${new Date().toISOString().split('T')[0]}.txt`;
   }
 
   const blob = new Blob([content], { type: 'text/plain' });

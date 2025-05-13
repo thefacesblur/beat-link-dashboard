@@ -1,23 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useParamsData from './useParamsData';
 import Dashboard from './Dashboard';
-import { Container, Typography, Box, Alert, CircularProgress } from '@mui/material';
+import { Container, Typography, Box, Alert, CircularProgress, IconButton, useTheme } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsPanel from './SettingsPanel';
 
 function App() {
   const { data, error } = useParamsData();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const theme = useTheme();
 
   return (
-    <Container width="100%" maxWidth="lg" sx={{ pt: 4 }}>
-      <Typography variant="h4" sx={{ textAlign: 'left', marginLeft: '30px' }}>
-        Beat Link Dashboard
-      </Typography>
+    <Container maxWidth="lg" sx={{ pt: 4 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={-2}>
+        <Typography variant="h3" gutterBottom sx={{ ml: 3.6 }}>
+          Beat Link Dashboard
+        </Typography>
+        <IconButton onClick={() => setSettingsOpen(true)} size="large" aria-label="Settings" sx={{ mr: 3 }}>
+          <SettingsIcon />
+        </IconButton>
+      </Box>
       {error && <Alert severity="error">{error.message}</Alert>}
-      {!data && !error && ( 
+      {!data && !error && (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="30vh">
           <CircularProgress />
         </Box>
       )}
       {data && <Dashboard params={data} />}
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Container>
   );
 }

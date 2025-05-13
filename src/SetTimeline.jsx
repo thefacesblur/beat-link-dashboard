@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Tooltip } from '@mui/material';
+import { Box, Typography, Tooltip, Paper } from '@mui/material';
 
 export default function SetTimeline({ history }) {
   if (!history.length) return null;
@@ -12,7 +12,7 @@ export default function SetTimeline({ history }) {
   const safeDuration = totalDuration > 0 ? totalDuration : 60000;
 
   return (
-    <Box sx={{ mt: 3, p: 2, background: 'rgba(51, 51, 51, 0.8)', borderRadius: 3 }}>
+    <Paper sx={{ mt: 3, p: 2, borderRadius: 3 }}>
       <Typography variant="h6" gutterBottom>Set Overview</Typography>
       <Box display="flex" alignItems="center" height={32} position="relative" minWidth={200} width="100%">
         {history.map((entry, i) => {
@@ -30,7 +30,7 @@ export default function SetTimeline({ history }) {
                 <span>
                   <b>{entry.artist} - {entry.title}</b><br />
                   Deck {entry.player}<br />
-                  {new Date(entry.timestamp).toLocaleTimeString()}
+                  {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               }
               arrow
@@ -54,6 +54,6 @@ export default function SetTimeline({ history }) {
         <Typography variant="caption"> Start: {new Date(start).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</Typography>
         <Typography variant="caption"> End: {new Date(end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' } )}</Typography>
       </Box>
-    </Box>
+    </Paper>
   );
 }
