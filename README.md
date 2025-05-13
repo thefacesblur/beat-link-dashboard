@@ -1,6 +1,6 @@
-# Beat Link Trigger - React Dashboard
+# Beat Link Dashboard - React Dashboard for Beat-Link-Trigger
 
-This is a React.js dashboard that integrates with Beat Link Trigger to display Pro DJ Link data in realtime, built with [Vite](https://vitejs.dev/).
+This is a React-based dashboard that integrates with Beat Link Trigger to display Pro DJ Link data in realtime, built with [Vite](https://vitejs.dev/).
 
 Beat Link Trigger application can be found here: [https://github.com/Deep-Symmetry/beat-link-trigger](https://github.com/Deep-Symmetry/beat-link-trigger)
 
