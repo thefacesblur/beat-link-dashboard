@@ -118,6 +118,7 @@ export default function Dashboard({ params }) {
             bpm: player.track.bpm || player['track-bpm'],
             duration: player.track.duration,
             trackId,
+            genre: player.track.genre || 'Unknown',
           }
         ]);
         lastTrackIds.current[player.number] = trackId;
