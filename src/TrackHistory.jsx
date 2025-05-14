@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
 import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, Box, Tabs, Tab } from '@mui/material';
-import { FixedSizeList as VirtualList } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import TrackAnalytics from './TrackAnalytics';
 import { useSettings } from './SettingsContext';
 
@@ -20,41 +18,27 @@ const DeckCell = ({ entry }) => (
 
 const ArtistCell = ({ entry }) => (
   <TableCell sx={{ wordBreak: 'break-word', maxWidth: '250px' }}>
-    {entry.artist || 'Unknown Artist'}
+    {entry.artist}
   </TableCell>
 );
 
 const TitleCell = ({ entry }) => (
   <TableCell sx={{ wordBreak: 'break-word', maxWidth: '400px' }}>
-    {entry.title || 'Unknown Title'}
+    {entry.title}
   </TableCell>
 );
 
 const BpmCell = ({ entry }) => (
   <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-    {entry.bpm || '-'}
+    {entry.bpm}
   </TableCell>
 );
 
 const GenreCell = ({ entry }) => (
   <TableCell sx={{ wordBreak: 'break-word', maxWidth: '200px' }}>
-    {entry.genre || 'Unknown'}
+    {entry.genre}
   </TableCell>
 );
-
-// Virtualized row component for TableBody
-const VirtualizedRow = React.memo(({ data, index, style }) => {
-  const { entry, fieldMap, trackHistoryFields } = data;
-  
-  return (
-    <TableRow style={style}>
-      {trackHistoryFields.map(field => {
-        const CellComponent = fieldMap[field];
-        return CellComponent ? <CellComponent key={field} entry={entry} /> : null;
-      })}
-    </TableRow>
-  );
-});
 
 export default function TrackHistory({ history, players }) {
   const [tab, setTab] = React.useState(0);
@@ -75,14 +59,9 @@ export default function TrackHistory({ history, players }) {
   // Memoize the reversed history to avoid recalculation on each render
   const reversedHistory = useMemo(() => [...history].reverse(), [history]);
 
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setTab(newValue);
-  };
-
   return (
     <Paper sx={{ mt: 3, p: 2, overflowX: 'auto', borderRadius: 3 }}>
-      <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 2 }}>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="History" />
         {analyticsEnabled && <Tab label="Analytics" />}
       </Tabs>
@@ -98,36 +77,14 @@ export default function TrackHistory({ history, players }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* Fixed height container for virtualized list */}
-              <Box height={400} width="100%">
-                <AutoSizer>
-                  {({ height, width }) => (
-                    <VirtualList
-                      height={height}
-                      width={width}
-                      itemCount={reversedHistory.length}
-                      itemSize={60} // Approximate row height
-                      itemData={{
-                        fieldMap,
-                        trackHistoryFields,
-                        entries: reversedHistory
-                      }}
-                    >
-                      {({ index, style, data }) => (
-                        <VirtualizedRow
-                          data={{
-                            entry: reversedHistory[index],
-                            fieldMap,
-                            trackHistoryFields
-                          }}
-                          index={index}
-                          style={style}
-                        />
-                      )}
-                    </VirtualList>
-                  )}
-                </AutoSizer>
-              </Box>
+              {reversedHistory.map((entry, i) => (
+                <TableRow key={i}>
+                  {trackHistoryFields.map(field => {
+                    const CellComponent = fieldMap[field];
+                    return CellComponent ? <CellComponent key={field} entry={entry} /> : null;
+                  })}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </Box>

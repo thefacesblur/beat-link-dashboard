@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo, Suspense, lazy } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import PlayerCard from './PlayerCard';
-import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery, Snackbar, CircularProgress } from '@mui/material';
+import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery, Snackbar } from '@mui/material';
 import TrackHistory from './TrackHistory';
-// Lazy-loaded component for better code splitting
-const SetTimeline = lazy(() => import('./SetTimeline'));
+import SetTimeline from './SetTimeline';
 import {
   DndContext,
   closestCenter,
@@ -19,56 +18,6 @@ import {
   rectSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import * as storageUtils from './utils/storage';
-
-// Error boundary component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('Dashboard component error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <Box 
-          sx={{ 
-            p: 3, 
-            m: 2, 
-            borderRadius: 2, 
-            bgcolor: 'error.main', 
-            color: 'error.contrastText' 
-          }}
-        >
-          <Typography variant="h6">Something went wrong</Typography>
-          <Typography variant="body2">{this.state.error?.message || 'Unknown error'}</Typography>
-          <Button 
-            variant="contained" 
-            sx={{ mt: 2 }}
-            onClick={() => this.setState({ hasError: false, error: null })}
-          >
-            Try Again
-          </Button>
-        </Box>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-// Constants
-const TRACK_HISTORY_STORAGE_KEY = 'trackHistory';
-const TIMELINE_ID = 'dj-set-timeline';
-const HISTORY_ID = 'track-history';
 
 // Memoized helper function
 const dedupeHistory = (history) => {
@@ -84,12 +33,8 @@ const dedupeHistory = (history) => {
   });
 };
 
-// Loading fallback component
-const LoadingFallback = () => (
-  <Box display="flex" justifyContent="center" alignItems="center" p={4}>
-    <CircularProgress />
-  </Box>
-);
+const TIMELINE_ID = 'dj-set-timeline';
+const HISTORY_ID = 'track-history';
 
 // Memoized SortableSection component to prevent unnecessary re-renders
 const SortableSection = React.memo(({ id, children, gridColumn }) => {
@@ -103,9 +48,7 @@ const SortableSection = React.memo(({ id, children, gridColumn }) => {
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
+      {children}
     </div>
   );
 });
@@ -114,19 +57,20 @@ export default function Dashboard({ params }) {
   // Use initialization function for complex state to avoid re-computing on every render
   const [history, setHistory] = useState(() => {
     try {
-      // Use optimized storage utility with error handling
-      const savedHistory = storageUtils.getItem(TRACK_HISTORY_STORAGE_KEY, []);
-      return dedupeHistory(savedHistory);
+      const saved = localStorage.getItem('trackHistory');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return dedupeHistory(parsed);
+      }
     } catch (e) {
       console.error('Failed to parse saved history:', e);
-      return [];
     }
+    return [];
   });
   
   const lastTrackIds = useRef({});
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState(null);
-  const [storageError, setStorageError] = useState(false);
 
   // Memoize players array to prevent unnecessary re-renders
   const players = useMemo(() => {
@@ -237,21 +181,17 @@ export default function Dashboard({ params }) {
     }
   }, [params]);
 
-  // Persist history in localStorage - use throttled/batched storage
+  // Persist history in localStorage - debounce for performance
   useEffect(() => {
-    if (history.length > 0) {
-      // Use optimized storage with throttling/batching
-      storageUtils.setItem(TRACK_HISTORY_STORAGE_KEY, history)
-        .then(success => {
-          if (!success) {
-            setStorageError(true);
-          }
-        })
-        .catch(err => {
-          console.error('Failed to save history to storage:', err);
-          setStorageError(true);
-        });
-    }
+    const saveHistoryTimeout = setTimeout(() => {
+      try {
+        localStorage.setItem('trackHistory', JSON.stringify(history));
+      } catch (e) {
+        console.error('Failed to save history to localStorage:', e);
+      }
+    }, 500);
+    
+    return () => clearTimeout(saveHistoryTimeout);
   }, [history]);
 
   const theme = useTheme();
@@ -265,14 +205,9 @@ export default function Dashboard({ params }) {
     if (window.confirm('Are you sure you want to reset the session?')) {
       setHistory([]);
       lastTrackIds.current = {};
-      storageUtils.removeItem(TRACK_HISTORY_STORAGE_KEY);
-      setStorageError(false);
+      localStorage.removeItem('trackHistory');
     }
   }, []);
-
-  // Handle snackbar closing
-  const handleSnackbarClose = useCallback(() => setError(null), []);
-  const handleStorageErrorClose = useCallback(() => setStorageError(false), []);
 
   // Memoize dashboard sections to prevent recreation on each render
   const dashboardSections = useMemo(() => {
@@ -280,9 +215,7 @@ export default function Dashboard({ params }) {
       if (id === TIMELINE_ID) {
         return (
           <SortableSection key={id} id={id} gridColumn={isMobile ? undefined : '1 / -1'}>
-            <Suspense fallback={<LoadingFallback />}>
-              <SetTimeline history={history} />
-            </Suspense>
+            <SetTimeline history={history} />
           </SortableSection>
         );
       } else if (id === HISTORY_ID) {
@@ -300,7 +233,7 @@ export default function Dashboard({ params }) {
           </SortableSection>
         );
       }
-    }).filter(Boolean); // Filter out null values
+    });
   }, [dashboardOrder, history, isMobile, players]);
 
   // Memoize the drag overlay content
@@ -329,65 +262,56 @@ export default function Dashboard({ params }) {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <Box px={{ xs: 1, sm: 2, md: 4 }} py={2}>
-        <Snackbar
-          open={!!error}
-          message={error ? error.message : ''}
-          autoHideDuration={6000}
-          onClose={handleSnackbarClose}
-        />
-        <Snackbar
-          open={storageError}
-          message="Failed to save session data. Your session may not be saved."
-          autoHideDuration={10000}
-          onClose={handleStorageErrorClose}
-          severity="warning"
-        />
-        <Typography variant="h6" gutterBottom></Typography>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={(event) => {
-            setActiveId(null);
-            handleDragEnd(event);
-          }}
-          onDragCancel={handleDragCancel}
+    <Box px={{ xs: 1, sm: 2, md: 4 }} py={2}>
+      <Snackbar
+        open={!!error}
+        message={error ? error.message : ''}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+      />
+      <Typography variant="h6" gutterBottom></Typography>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={(event) => {
+          setActiveId(null);
+          handleDragEnd(event);
+        }}
+        onDragCancel={handleDragCancel}
+      >
+        <SortableContext
+          items={dashboardOrder}
+          strategy={rectSortingStrategy}
         >
-          <SortableContext
-            items={dashboardOrder}
-            strategy={rectSortingStrategy}
+          <Box
+            display="grid"
+            gridTemplateColumns={isMobile ? '1fr' : 'repeat(2, 1fr)'}
+            gap={2}
+            width="100%"
+            maxWidth="100vw"
+            overflowX="hidden"
           >
-            <Box
-              display="grid"
-              gridTemplateColumns={isMobile ? '1fr' : 'repeat(2, 1fr)'}
-              gap={2}
-              width="100%"
-              maxWidth="100vw"
-              overflowX="hidden"
-            >
-              {dashboardSections}
-            </Box>
-          </SortableContext>
-          <DragOverlay>
-            {dragOverlayContent}
-          </DragOverlay>
-        </DndContext>
-        <ButtonGroup sx={{ mb: 2, mt: 2, float: 'right', width: '100%', justifyContent: 'flex-end' }}>
-          <Button onClick={exportHistoryCSV}>Export CSV</Button>
-          <Button onClick={exportHistoryJSON}>Export JSON</Button>
-          <Button onClick={exportHistoryTXT}>Export TXT</Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={resetHistory}
-          >
-            Restart History Session
-          </Button>
-        </ButtonGroup>
-      </Box>
-    </ErrorBoundary>
+            {dashboardSections}
+          </Box>
+        </SortableContext>
+        <DragOverlay>
+          {dragOverlayContent}
+        </DragOverlay>
+      </DndContext>
+      <ButtonGroup sx={{ mb: 2, mt: 2, float: 'right', width: '100%', justifyContent: 'flex-end' }}>
+        <Button onClick={exportHistoryCSV}>Export CSV</Button>
+        <Button onClick={exportHistoryJSON}>Export JSON</Button>
+        <Button onClick={exportHistoryTXT}>Export TXT</Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={resetHistory}
+        >
+          Restart History Session
+        </Button>
+      </ButtonGroup>
+    </Box>
   );
 }
 

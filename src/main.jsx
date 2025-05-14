@@ -1,11 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ThemeProvider, createTheme, CssBaseline, Box, Typography, Button } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { useSettings, SettingsProvider } from './SettingsContext';
-
-// Development mode logging
-console.log('Running in development mode');
 
 // Create themes only once, outside component tree to avoid recreation
 const createAppTheme = (mode) => createTheme({
@@ -38,70 +35,6 @@ const createAppTheme = (mode) => createTheme({
       },
     },
   },
-});
-
-// Global error boundary component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('Application crashed:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // Fallback UI when app crashes
-      return (
-        <Box 
-          sx={{ 
-            p: 4, 
-            m: 2, 
-            display: 'flex', 
-            flexDirection: 'column',
-            alignItems: 'center',
-            bgcolor: '#141414',
-            color: 'white'
-          }}
-        >
-          <Typography variant="h4" gutterBottom>
-            Application Error
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2, color: '#ff6b6b' }}>
-            {this.state.error?.message || 'Unknown error occurred'}
-          </Typography>
-          <Button 
-            variant="contained" 
-            color="primary"
-            onClick={() => window.location.reload()}
-          >
-            Reload Application
-          </Button>
-          <Box sx={{ mt: 4, p: 2, bgcolor: '#1e1e1e', borderRadius: 1, width: '100%', overflow: 'auto' }}>
-            <pre>{this.state.error?.stack}</pre>
-          </Box>
-        </Box>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-// Error handler for development
-window.addEventListener('error', (event) => {
-  console.error('Global error caught:', event.error);
-});
-
-// Unhandled promise rejection handler
-window.addEventListener('unhandledrejection', (event) => {
-  console.error('Unhandled promise rejection:', event.reason);
 });
 
 // Memoized theme wrapper component
@@ -153,13 +86,10 @@ if (!rootElement) {
   throw new Error('Failed to find the root element');
 }
 
-// In development mode, we use StrictMode and wrap everything in an ErrorBoundary
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <SettingsProvider>
-        <ThemeWrapper />
-      </SettingsProvider>
-    </ErrorBoundary>
+    <SettingsProvider>
+      <ThemeWrapper />
+    </SettingsProvider>
   </React.StrictMode>
 ); 
