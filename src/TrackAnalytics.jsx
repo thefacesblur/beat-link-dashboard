@@ -85,7 +85,7 @@ export default function TrackAnalytics({ history }) {
           <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <CardContent sx={{ flex: 1, width: '100%' }}>
               <Typography variant="subtitle1" gutterBottom sx={{ textAlign: 'center' }}>BPM Distribution</Typography>
-              <Box sx={{ width: "50%", height: 200, mx: 'auto' }}>
+              <Box sx={{ width: 400, height: 200, mx: 'auto' }}>
                 <ResponsiveContainer width="90%" height="100%">
                   <BarChart data={bpmData}>
                     <XAxis dataKey="bpm" />
@@ -104,7 +104,7 @@ export default function TrackAnalytics({ history }) {
           <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <CardContent sx={{ flex: 1, width: '100%' }}>
               <Typography variant="subtitle1" gutterBottom sx={{ textAlign: 'center' }}>Genre Distribution</Typography>
-              <Box sx={{ width: "50%", height: 200, mx: 'auto' }}>
+              <Box sx={{ width: 400, height: 200, mx: 'auto' }}>
                 <ResponsiveContainer width="90%" height="100%">
                   <PieChart>
                     <Pie
