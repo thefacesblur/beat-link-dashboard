@@ -18,7 +18,7 @@ export default function TrackHistory({ history, players }) {
     'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
     'Genre': entry => {
       const player = players[entry.player]; // Assuming entry.player corresponds to the player ID
-      return <TableCell>{player.track.genre || 'Unknown'}</TableCell>;
+      return <TableCell>{player?.track?.genre || 'Unknown'}</TableCell>;
     },
   };
 
