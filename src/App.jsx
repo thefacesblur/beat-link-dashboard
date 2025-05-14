@@ -28,7 +28,6 @@ function App() {
         </Box>
       )}
       {data && <Dashboard params={data} />}
-      {data && <TrackHistory history={data.history} players={data.players} />}
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Container>
   );
