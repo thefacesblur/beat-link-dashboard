@@ -120,6 +120,7 @@ export default function Dashboard({ params }) {
             duration: player.track.duration,
             trackId,
             genre: player.track.genre || 'Unknown',
+            key: player.track.key || 'Unknown',
           }
         ]);
         lastTrackIds.current[player.number] = trackId;

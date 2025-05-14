@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Typography, Tooltip, Paper, Fade, Chip } from '@mui/material';
 
 // Helper function to format duration
@@ -8,29 +8,26 @@ const formatDuration = (ms) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export default function SetTimeline({ history }) {
+const SetTimeline = function SetTimeline({ history }) {
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [isHovering, setIsHovering] = useState(false);
 
   if (!history.length) return null;
 
-  // Calculate total set duration
-  const start = history[0].timestamp;
-  // Fudge end time if only one track
-  const end = history.length > 1 ? history[history.length - 1].timestamp : start + 60000;
-  const totalDuration = end - start;
-  const safeDuration = totalDuration > 0 ? totalDuration : 60000;
-  
-  // Calculate some statistics for the selected track
-  const getTrackStats = (index) => {
+  // Memoize derived values
+  const start = useMemo(() => history[0].timestamp, [history]);
+  const end = useMemo(() => history.length > 1 ? history[history.length - 1].timestamp : history[0].timestamp + 60000, [history]);
+  const totalDuration = useMemo(() => end - start, [end, start]);
+  const safeDuration = useMemo(() => totalDuration > 0 ? totalDuration : 60000, [totalDuration]);
+
+  // Define getTrackStats as a function
+  function getTrackStats(index) {
     if (index === null || index >= history.length) return null;
-    
     const track = history[index];
     const next = history[index + 1];
     const trackEnd = next ? next.timestamp : end;
     const duration = trackEnd - track.timestamp;
     const percentOfSet = ((duration / safeDuration) * 100).toFixed(1);
-    
     return {
       track,
       duration,
@@ -39,9 +36,9 @@ export default function SetTimeline({ history }) {
       startTime: new Date(track.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date(trackEnd).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
-  };
+  }
 
-  const selectedTrackStats = getTrackStats(selectedTrack);
+  const selectedTrackStats = useMemo(() => getTrackStats(selectedTrack), [selectedTrack, history, end, safeDuration]);
 
   return (
     <Paper 
@@ -223,6 +220,10 @@ export default function SetTimeline({ history }) {
                 <Typography variant="body2">{selectedTrackStats.track.key || 'Unknown'}</Typography>
               </Box>
               <Box>
+                <Typography variant="caption" sx={{ color: '#aaa' }}>Genre</Typography>
+                <Typography variant="body2">{selectedTrackStats.track.genre || 'Unknown'}</Typography>
+              </Box>
+              <Box>
                 <Typography variant="caption" sx={{ color: '#aaa' }}>Deck</Typography>
                 <Typography variant="body2">{selectedTrackStats.track.player}</Typography>
               </Box>
@@ -242,4 +243,6 @@ export default function SetTimeline({ history }) {
       )}
     </Paper>
   );
-}
+};
+
+export default React.memo(SetTimeline);
