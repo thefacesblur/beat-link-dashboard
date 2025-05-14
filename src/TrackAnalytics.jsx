@@ -107,168 +107,161 @@ export default function TrackAnalytics({ history }) {
     .sort((a, b) => b.value - a.value);
 
   return (
-    <Box sx={{ width: '100%', p: 0 }}>
-      {/* Stats Row - 4 equal boxes */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={6} sm={3}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1,
-            height: '100%'
-          }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
-              Total Tracks
-            </Typography>
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
-              {totalTracks}
-            </Typography>
-          </Box>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1,
-            height: '100%'
-          }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
-              Unique Artists
-            </Typography>
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
-              {uniqueArtists}
-            </Typography>
-          </Box>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1,
-            height: '100%'
-          }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
-              Average BPM
-            </Typography>
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
-              {avgBpm}
-            </Typography>
-          </Box>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1,
-            height: '100%'
-          }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
-              Set Duration (min)
-            </Typography>
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
-              {durationMin}
-            </Typography>
-          </Box>
-        </Grid>
-      </Grid>
+    <Box sx={{ width: '100%' }}>
+      {/* Stats Row */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+        <Box sx={{ 
+          flex: '1 1 calc(25% - 16px)',
+          minWidth: '150px',
+          p: 2, 
+          bgcolor: '#1e1e1e', 
+          borderRadius: 1,
+        }}>
+          <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
+            Total Tracks
+          </Typography>
+          <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
+            {totalTracks}
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          flex: '1 1 calc(25% - 16px)',
+          minWidth: '150px',
+          p: 2, 
+          bgcolor: '#1e1e1e', 
+          borderRadius: 1,
+        }}>
+          <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
+            Unique Artists
+          </Typography>
+          <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
+            {uniqueArtists}
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          flex: '1 1 calc(25% - 16px)',
+          minWidth: '150px',
+          p: 2, 
+          bgcolor: '#1e1e1e', 
+          borderRadius: 1,
+        }}>
+          <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
+            Average BPM
+          </Typography>
+          <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
+            {avgBpm}
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          flex: '1 1 calc(25% - 16px)',
+          minWidth: '150px',
+          p: 2, 
+          bgcolor: '#1e1e1e', 
+          borderRadius: 1,
+        }}>
+          <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
+            Set Duration (min)
+          </Typography>
+          <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
+            {durationMin}
+          </Typography>
+        </Box>
+      </Box>
       
-      {/* Charts Row - 2 equal boxes that span full width */}
-      <Grid container spacing={2}>
-        {/* BPM Distribution Chart - Force 50% width */}
-        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1,
-            width: '100%',
-            height: '100%',
-            minHeight: 300
-          }}>
-            <Typography variant="body1" sx={{ mb: 1, color: '#fff', fontWeight: 500, px: 1 }}>
+      {/* Charts Row - using flex instead of Grid for more direct control */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+        {/* BPM Distribution Chart */}
+        <Box sx={{ 
+          flex: '1 1 calc(50% - 16px)',
+          minWidth: '300px',
+          bgcolor: '#1e1e1e', 
+          borderRadius: 1,
+          overflow: 'hidden'
+        }}>
+          <Box sx={{ p: 2, pb: 0 }}>
+            <Typography variant="body1" sx={{ color: '#fff', fontWeight: 500 }}>
               BPM Distribution
             </Typography>
-            <Box sx={{ height: 260, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={bpmData}
-                  margin={{ top: 5, right: 5, left: -20, bottom: 20 }}
-                >
-                  <XAxis 
-                    dataKey="bpm" 
-                    tick={{ fill: '#e0e0e0', fontSize: 12 }}
-                    tickLine={{ stroke: '#555' }}
-                    axisLine={{ stroke: '#555' }}
-                  />
-                  <YAxis 
-                    allowDecimals={false} 
-                    tick={{ fill: '#e0e0e0', fontSize: 12 }}
-                    tickLine={{ stroke: '#555' }}
-                    axisLine={{ stroke: '#555' }}
-                    width={30}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="count" 
-                    fill="#29D9B9"
-                    radius={[2, 2, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
           </Box>
-        </Grid>
+          <Box sx={{ height: 350, width: '100%', p: 1 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={bpmData}
+                margin={{ top: 10, right: 10, left: 0, bottom: 25 }}
+              >
+                <XAxis 
+                  dataKey="bpm" 
+                  tick={{ fill: '#e0e0e0', fontSize: 12 }}
+                  tickLine={{ stroke: '#555' }}
+                  axisLine={{ stroke: '#555' }}
+                />
+                <YAxis 
+                  allowDecimals={false} 
+                  tick={{ fill: '#e0e0e0', fontSize: 12 }}
+                  tickLine={{ stroke: '#555' }}
+                  axisLine={{ stroke: '#555' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar 
+                  dataKey="count" 
+                  fill="#29D9B9"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
         
-        {/* Genre Distribution Chart - Force 50% width */}
-        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: '#1e1e1e', 
-            borderRadius: 1,
-            width: '100%',
-            height: '100%',
-            minHeight: 300
-          }}>
-            <Typography variant="body1" sx={{ mb: 1, color: '#fff', fontWeight: 500, px: 1 }}>
+        {/* Genre Distribution Chart */}
+        <Box sx={{ 
+          flex: '1 1 calc(50% - 16px)',
+          minWidth: '300px',
+          bgcolor: '#1e1e1e', 
+          borderRadius: 1,
+          overflow: 'hidden'
+        }}>
+          <Box sx={{ p: 2, pb: 0 }}>
+            <Typography variant="body1" sx={{ color: '#fff', fontWeight: 500 }}>
               Genre Distribution
             </Typography>
-            <Box sx={{ height: 260, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={genreData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={80}
-                    innerRadius={35}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={renderCustomizedLabel}
-                    nameKey="name"
-                  >
-                    {genreData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={GENRE_COLORS[index % GENRE_COLORS.length]} 
-                        stroke="#272727"
-                        strokeWidth={1}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend 
-                    formatter={(value) => <span style={{ color: '#e0e0e0', fontSize: '12px' }}>{value}</span>}
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    align="center"
-                    wrapperStyle={{ paddingTop: '10px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
           </Box>
-        </Grid>
-      </Grid>
+          <Box sx={{ height: 350, width: '100%', p: 1 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <Pie
+                  data={genreData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  outerRadius={100}
+                  innerRadius={50}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={renderCustomizedLabel}
+                  nameKey="name"
+                >
+                  {genreData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={GENRE_COLORS[index % GENRE_COLORS.length]} 
+                      stroke="#272727"
+                      strokeWidth={1}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend 
+                  formatter={(value) => <span style={{ color: '#e0e0e0', fontSize: '12px' }}>{value}</span>}
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ paddingTop: '10px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 }
