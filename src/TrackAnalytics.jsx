@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Card, CardContent, Grid } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import TrackGenreDistribution from './TrackGenreDistribution';
 
 const GENRE_COLORS = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1', '#a4de6c', '#d0ed57', '#d8854f', '#d0ed57', '#a28fd0'
@@ -86,6 +87,11 @@ export default function TrackAnalytics({ history }) {
               </Box>
             </CardContent>
           </Card>
+        </Grid>
+      </Grid>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
+        <Grid item xs={12} md={6}>
+          <TrackGenreDistribution players={players} />
         </Grid>
       </Grid>
     </Box>
