@@ -18,6 +18,7 @@ export default function TrackMetadata({ track, player }) {
       <Typography><strong>Artist:</strong> {track.artist || 'Unknown'}</Typography>
       <Typography><strong>BPM:</strong> {bpm}</Typography>
       <Typography><strong>Key:</strong> {track.key || 'Unknown'}</Typography>
+      <Typography><strong>Genre:</strong> {player.track.genre || 'Unknown'}</Typography>
       {/* Add more fields as available */}
     </div>
   );
