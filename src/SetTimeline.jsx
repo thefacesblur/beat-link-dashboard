@@ -12,10 +12,13 @@ const formatDuration = (ms) => {
 const MAX_GAP_BETWEEN_TRACKS = 5 * 60 * 1000;
 
 const SetTimeline = function SetTimeline({ history }) {
+  // Early return before any hooks to avoid conditional hook calls
+  if (!history || !history.length) {
+    return null;
+  }
+
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [isHovering, setIsHovering] = useState(false);
-
-  if (!history.length) return null;
 
   // Memoize derived values
   const start = useMemo(() => history[0].timestamp, [history]);
