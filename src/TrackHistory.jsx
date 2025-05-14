@@ -3,7 +3,7 @@ import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, Bo
 import TrackAnalytics from './TrackAnalytics';
 import { useSettings } from './SettingsContext';
 
-export default function TrackHistory({ history, players }) {
+export default function TrackHistory({ history, player }) {
   const [tab, setTab] = useState(0);
   const { analyticsEnabled, trackHistoryFields } = useSettings ? useSettings() : { analyticsEnabled: true, trackHistoryFields: ['Time', 'Deck', 'Artist', 'Title', 'BPM', 'Genre'] };
   
