@@ -8,22 +8,19 @@ export default defineConfig({
     react(),
   ],
   
-  // Development-focused build settings
+  // Completely disable source maps
   build: {
-    sourcemap: true,
+    sourcemap: false,
     minify: false,
-    // Disable code splitting for development
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-      },
-    },
   },
   
-  // Source maps for development
+  // Disable source maps for dependencies as well
   optimizeDeps: {
     include: ['react', 'react-dom'],
-    exclude: []
+    exclude: [],
+    esbuildOptions: {
+      sourcemap: false
+    }
   },
   
   // Development server configuration
@@ -56,13 +53,14 @@ export default defineConfig({
     },
   },
   
-  // CSS settings
+  // CSS settings - disable source maps here too
   css: {
-    devSourcemap: true,
+    devSourcemap: false,
   },
   
   // esbuild configuration
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    sourcemap: false
   },
 }); 
