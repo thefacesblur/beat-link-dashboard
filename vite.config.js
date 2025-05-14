@@ -12,6 +12,7 @@ export default defineConfig({
     host: true,
     port: 5173,
     open: true,
+    allowedHosts: ['localhost', 'app.thefacesblur.com'],
     proxy: {
       // Proxy API requests to the backend overlay server
       '/params.json': 'http://localhost:17081',
