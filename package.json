@@ -4,10 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "analyze": "vite build --mode analyze",
-    "lint": "eslint src --ext .js,.jsx"
+    "start": "vite",
+    "clean": "rm -rf node_modules/.vite"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -25,12 +23,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
     "rollup-plugin-visualizer": "^5.12.0",
-    "vite": "^4.4.0",
-    "vite-plugin-compression": "^0.5.1",
-    "vite-plugin-eslint": "^1.8.1"
+    "vite": "^4.4.0"
   }
 }

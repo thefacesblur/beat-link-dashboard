@@ -1,113 +1,68 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { visualizer } from 'rollup-plugin-visualizer';
-import viteCompression from 'vite-plugin-compression';
 import { resolve } from 'path';
 
-// https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
-  const isProduction = command === 'build';
-  const isAnalyze = mode === 'analyze';
+// Simplified configuration focused on development mode only
+export default defineConfig({
+  plugins: [
+    react(),
+  ],
   
-  return {
-    plugins: [
-      react(),
-      // Apply compression in production
-      isProduction && viteCompression({
-        algorithm: 'gzip',
-        ext: '.gz',
-      }),
-      // Apply brotli compression in production
-      isProduction && viteCompression({
-        algorithm: 'brotliCompress',
-        ext: '.br',
-      }),
-      // Add bundle visualizer in analyze mode
-      isAnalyze && visualizer({
-        open: true,
-        gzipSize: true,
-        brotliSize: true,
-        filename: 'bundle-analysis.html',
-      }),
-    ].filter(Boolean),
-    
-    build: {
-      // Optimize bundle size
-      target: 'es2018',
-      outDir: 'dist',
-      assetsDir: 'assets',
-      cssCodeSplit: true,
-      sourcemap: !isProduction,
-      minify: isProduction ? 'esbuild' : false,
-      
-      // Implement code splitting
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            // Group major dependencies 
-            'vendor-mui': [
-              '@mui/material',
-              '@mui/icons-material',
-              '@emotion/react',
-              '@emotion/styled',
-            ],
-            'vendor-charts': ['recharts'],
-            'vendor-dnd': [
-              '@dnd-kit/core',
-              '@dnd-kit/sortable',
-              '@dnd-kit/modifiers',
-            ],
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-virtualized': ['react-window', 'react-virtualized-auto-sizer'],
-          },
-          // Dynamically name chunks for better caching
-          chunkFileNames: isProduction 
-            ? 'assets/[name].[hash].js'
-            : 'assets/[name].js',
-          entryFileNames: isProduction 
-            ? 'assets/[name].[hash].js'
-            : 'assets/[name].js',
-        },
+  // Development-focused build settings
+  build: {
+    sourcemap: true,
+    minify: false,
+    // Disable code splitting for development
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
       },
     },
-    
-    // Optimize development server
-    server: {
-      host: true,
-      port: 5173,
-      open: true,
-      allowedHosts: ['localhost', 'app.thefacesblur.com'],
-      proxy: {
-        // Proxy API requests to the backend overlay server
-        '/params.json': 'http://localhost:17081',
-        '/artwork': 'http://localhost:17081',
-        '/wave-preview': 'http://localhost:17081',
-        '/wave-detail': 'http://localhost:17081',
-      },
+  },
+  
+  // Source maps for development
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    exclude: []
+  },
+  
+  // Development server configuration
+  server: {
+    host: true,
+    port: 5173,
+    open: true,
+    hmr: {
+      overlay: true,
     },
-    
-    // Add path aliases
-    resolve: {
-      alias: {
-        '@': resolve(__dirname, 'src'),
-        '@components': resolve(__dirname, 'src/components'),
-        '@hooks': resolve(__dirname, 'src/hooks'),
-        '@utils': resolve(__dirname, 'src/utils'),
-      },
+    watch: {
+      usePolling: true,
     },
-    
-    // Optimize CSS
-    css: {
-      devSourcemap: true,
-      preprocessorOptions: {
-        // Add any CSS preprocessor options here
-      },
+    allowedHosts: ['localhost', 'app.thefacesblur.com'],
+    proxy: {
+      '/params.json': 'http://localhost:17081',
+      '/artwork': 'http://localhost:17081',
+      '/wave-preview': 'http://localhost:17081',
+      '/wave-detail': 'http://localhost:17081',
     },
-    
-    // Configure esbuild for better optimization
-    esbuild: {
-      logOverride: { 'this-is-undefined-in-esm': 'silent' },
-      legalComments: 'none',
+  },
+  
+  // Path aliases for imports
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '@components': resolve(__dirname, 'src/components'),
+      '@hooks': resolve(__dirname, 'src/hooks'),
+      '@utils': resolve(__dirname, 'src/utils'),
     },
-  };
+  },
+  
+  // CSS settings
+  css: {
+    devSourcemap: true,
+  },
+  
+  // esbuild configuration
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
+  },
 }); 

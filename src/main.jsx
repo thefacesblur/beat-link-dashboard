@@ -4,6 +4,9 @@ import App from './App';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { useSettings, SettingsProvider } from './SettingsContext';
 
+// Development mode logging
+console.log('Running in development mode');
+
 // Create themes only once, outside component tree to avoid recreation
 const createAppTheme = (mode) => createTheme({
   palette: {
@@ -35,6 +38,16 @@ const createAppTheme = (mode) => createTheme({
       },
     },
   },
+});
+
+// Error handler for development
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error);
+});
+
+// Unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
 });
 
 // Memoized theme wrapper component
@@ -86,6 +99,7 @@ if (!rootElement) {
   throw new Error('Failed to find the root element');
 }
 
+// In development mode, we use StrictMode
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <SettingsProvider>
