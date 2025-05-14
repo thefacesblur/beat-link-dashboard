@@ -4,7 +4,7 @@ import Dashboard from './Dashboard';
 import { Container, Typography, Box, Alert, CircularProgress, IconButton, useTheme } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsPanel from './SettingsPanel';
-import TrackHistory from './TrackHistory';
+
 
 function App() {
   const { data, error } = useParamsData();
