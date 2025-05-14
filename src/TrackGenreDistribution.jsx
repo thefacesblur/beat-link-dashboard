@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, Typography } from 'recharts';
 
 const TrackGenreDistribution = ({ players }) => {
   // Prepare data for the pie chart
@@ -7,11 +7,9 @@ const TrackGenreDistribution = ({ players }) => {
 
   // Count occurrences of each genre
   Object.values(players).forEach(player => {
-    if (player.track) {
+    if (player.track && player.track.genre) {
       const genre = player.track.genre;
-      if (genre) {
-        genreCount[genre] = (genreCount[genre] || 0) + 1;
-      }
+      genreCount[genre] = (genreCount[genre] || 0) + 1;
     }
   });
 
@@ -20,6 +18,11 @@ const TrackGenreDistribution = ({ players }) => {
     name: genre,
     value: count,
   }));
+
+  // Handle empty data case
+  if (data.length === 0) {
+    return <Typography>No genres available for distribution.</Typography>;
+  }
 
   // Define colors for the pie chart
   const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
