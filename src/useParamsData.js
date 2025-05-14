@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSettings } from './SettingsContext';
 
-export default function useParamsData(pollInterval = 500) {
+export default function useParamsData(pollInterval = 2000) {
   let contextInterval;
   try {
     contextInterval = useSettings()?.pollingInterval;

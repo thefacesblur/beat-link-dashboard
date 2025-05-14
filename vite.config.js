@@ -12,7 +12,6 @@ export default defineConfig({
     host: true,
     port: 5173,
     open: true,
-    allowedHosts: ['127.0.0.1', 'localhost'],
     proxy: {
       // Proxy API requests to the backend overlay server
       '/params.json': 'http://localhost:17081',
