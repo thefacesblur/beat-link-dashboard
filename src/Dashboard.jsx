@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PlayerCard from './PlayerCard';
-import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery } from '@mui/material';
+import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery, Snackbar } from '@mui/material';
 import TrackHistory from './TrackHistory';
 import SetTimeline from './SetTimeline';
 import {
@@ -44,6 +44,7 @@ export default function Dashboard({ params }) {
   });
   const lastTrackIds = useRef({});
   const [activeId, setActiveId] = useState(null);
+  const [error, setError] = useState(null);
 
   const players = params.players
     ? Object.values(params.players).filter(p => p.number === 1 || p.number === 2)
@@ -124,8 +125,16 @@ export default function Dashboard({ params }) {
         lastTrackIds.current[player.number] = trackId;
       }
     });
-    // eslint-disable-next-line
   }, [players]);
+
+  // Handle API errors
+  useEffect(() => {
+    if (!params) {
+      setError(new Error("Failed to fetch data from API"));
+    } else {
+      setError(null); // Clear error if data is fetched successfully
+    }
+  }, [params]);
 
   // Persist history in localStorage
   useEffect(() => {
@@ -162,6 +171,12 @@ export default function Dashboard({ params }) {
 
   return (
     <Box px={{ xs: 1, sm: 2, md: 4 }} py={2}>
+      <Snackbar
+        open={!!error}
+        message={error ? error.message : ''}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+      />
       <Typography variant="h6" gutterBottom></Typography>
       <DndContext
         sensors={sensors}
