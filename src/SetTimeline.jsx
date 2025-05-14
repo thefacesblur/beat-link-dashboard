@@ -131,7 +131,7 @@ export default function SetTimeline({ history }) {
                 sx={{
                   height: 24,
                   width: `${widthPercent}%`,
-                  bgcolor: entry.player === 1 ? '#29D9B9' : '#8884d8', // Different color per deck
+                  bgcolor: entry.player === 1 ? 'primary.main' : 'secondary.main', // Different color per deck
                   opacity: selectedTrack === i ? 1 : 0.8,
                   cursor: 'pointer',
                   borderRadius: i === 0 ? '8px 0 0 8px' : i === history.length - 1 ? '0 8px 8px 0' : 0,
