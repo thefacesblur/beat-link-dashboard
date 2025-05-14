@@ -107,11 +107,9 @@ export default function TrackAnalytics({ history }) {
     .sort((a, b) => b.value - a.value);
 
   return (
-    <Box sx={{ width: '100%' }}>
-      {/* Title is already in the main component, don't repeat "Analytics" heading */}
-      
-      {/* Stats Cards - Match the existing dashboard aesthetic */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+    <Box sx={{ width: '100%', p: 0 }}>
+      {/* Stats Row - 4 equal boxes */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={6} sm={3}>
           <Box sx={{ 
             p: 2, 
@@ -119,7 +117,7 @@ export default function TrackAnalytics({ history }) {
             borderRadius: 1,
             height: '100%'
           }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
               Total Tracks
             </Typography>
             <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
@@ -134,7 +132,7 @@ export default function TrackAnalytics({ history }) {
             borderRadius: 1,
             height: '100%'
           }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
               Unique Artists
             </Typography>
             <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
@@ -149,7 +147,7 @@ export default function TrackAnalytics({ history }) {
             borderRadius: 1,
             height: '100%'
           }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
               Average BPM
             </Typography>
             <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
@@ -164,7 +162,7 @@ export default function TrackAnalytics({ history }) {
             borderRadius: 1,
             height: '100%'
           }}>
-            <Typography variant="body2" color="#999" sx={{ mb: 1 }}>
+            <Typography variant="body2" color="#999" sx={{ mb: 0.5 }}>
               Set Duration (min)
             </Typography>
             <Typography variant="h4" sx={{ color: '#fff', fontWeight: 500 }}>
@@ -174,20 +172,22 @@ export default function TrackAnalytics({ history }) {
         </Grid>
       </Grid>
       
-      {/* Charts - styled to match the dashboard */}
+      {/* Charts Row - 2 equal boxes that span full width */}
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        {/* BPM Distribution Chart - Force 50% width */}
+        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
           <Box sx={{ 
-            p: 3, 
+            p: 2, 
             bgcolor: '#1e1e1e', 
             borderRadius: 1,
+            width: '100%',
             height: '100%',
-            minHeight: 350
+            minHeight: 300
           }}>
-            <Typography variant="subtitle1" sx={{ mb: 2, color: '#fff', textAlign: 'center' }}>
+            <Typography variant="body1" sx={{ mb: 1, color: '#fff', fontWeight: 500, px: 1 }}>
               BPM Distribution
             </Typography>
-            <Box sx={{ height: 300, width: '100%' }}>
+            <Box sx={{ height: 260, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={bpmData}
@@ -218,18 +218,20 @@ export default function TrackAnalytics({ history }) {
           </Box>
         </Grid>
         
-        <Grid item xs={12} md={6}>
+        {/* Genre Distribution Chart - Force 50% width */}
+        <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
           <Box sx={{ 
-            p: 3, 
+            p: 2, 
             bgcolor: '#1e1e1e', 
             borderRadius: 1,
+            width: '100%',
             height: '100%',
-            minHeight: 350
+            minHeight: 300
           }}>
-            <Typography variant="subtitle1" sx={{ mb: 2, color: '#fff', textAlign: 'center' }}>
+            <Typography variant="body1" sx={{ mb: 1, color: '#fff', fontWeight: 500, px: 1 }}>
               Genre Distribution
             </Typography>
-            <Box sx={{ height: 300, width: '100%' }}>
+            <Box sx={{ height: 260, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -237,8 +239,8 @@ export default function TrackAnalytics({ history }) {
                     cx="50%"
                     cy="50%"
                     labelLine={true}
-                    outerRadius={90}
-                    innerRadius={40}
+                    outerRadius={80}
+                    innerRadius={35}
                     paddingAngle={2}
                     dataKey="value"
                     label={renderCustomizedLabel}
@@ -259,9 +261,7 @@ export default function TrackAnalytics({ history }) {
                     layout="horizontal"
                     verticalAlign="bottom"
                     align="center"
-                    wrapperStyle={{ 
-                      paddingTop: '15px',
-                    }}
+                    wrapperStyle={{ paddingTop: '10px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
