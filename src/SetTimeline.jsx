@@ -146,28 +146,6 @@ export default function SetTimeline({ history }) {
                   boxSizing: 'border-box'
                 }}
               >
-                {/* Duration label if segment is wide enough */}
-                {widthPercent > 10 && (
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      position: 'absolute', 
-                      top: '50%', 
-                      left: '50%', 
-                      transform: 'translate(-50%, -50%)', 
-                      color: '#fff',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
-                      textShadow: '0px 0px 2px rgba(0,0,0,0.7)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '90%'
-                    }}
-                  >
-                    {durationText}
-                  </Typography>
-                )}
               </Box>
             </Tooltip>
           );
