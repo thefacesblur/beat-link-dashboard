@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import viteCompression from 'vite-plugin-compression';
-import eslint from 'vite-plugin-eslint';
 import { resolve } from 'path';
 
 // https://vitejs.dev/config/
@@ -13,7 +12,6 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [
       react(),
-      eslint(),
       // Apply compression in production
       isProduction && viteCompression({
         algorithm: 'gzip',
