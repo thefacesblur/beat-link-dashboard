@@ -25,13 +25,13 @@ function TrackHistory({ history, players }) {
   const reversedHistory = useMemo(() => history.slice().reverse(), [history]);
 
   return (
-    <Paper sx={{ mt: 3, p: 2, overflowX: 'auto', borderRadius: 3 }}>
+    <Paper sx={{ mt: 3, p: 2, borderRadius: 3, overflow: 'auto' }}>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="History" />
         {analyticsEnabled && <Tab label="Analytics" />}
       </Tabs>
       {tab === 0 && (
-        <Box sx={{ minWidth: 320, maxWidth: '100%', overflowX: 'auto' }}>
+        <Box sx={{ minWidth: 320, maxWidth: '100%', overflow: 'auto' }}>
           <Typography variant="h6" gutterBottom>Track History</Typography>
           <Table size="small" sx={{ minWidth: 500 }}>
             <TableHead>
