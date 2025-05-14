@@ -3,7 +3,7 @@ import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, Bo
 import TrackAnalytics from './TrackAnalytics';
 import { useSettings } from './SettingsContext';
 
-export default function TrackHistory({ history, player }) {
+export default function TrackHistory({ history, players }) {
   const [tab, setTab] = useState(0);
   const { analyticsEnabled, trackHistoryFields } = useSettings ? useSettings() : { analyticsEnabled: true, trackHistoryFields: ['Time', 'Deck', 'Artist', 'Title', 'BPM', 'Genre'] };
   
@@ -16,7 +16,10 @@ export default function TrackHistory({ history, player }) {
     'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 120, fontSize: { xs: '0.8rem', sm: '1rem' } }}>{entry.artist}</TableCell>,
     'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 160 }}>{entry.title}</TableCell>,
     'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
-    'Genre': entry => <TableCell>{entry.player.track.genre}</TableCell>,
+    'Genre': entry => {
+      const player = players[entry.player]; // Assuming entry.player corresponds to the player ID
+      return <TableCell>{player?.track?.genre || 'Unknown'}</TableCell>; // Handle missing genre
+    },
   };
 
   return (
