@@ -15,8 +15,8 @@ export default function TrackHistory({ history, players }) {
     'Deck': entry => <TableCell sx={{ whiteSpace: 'nowrap', width: '60px' }}>{entry.player}</TableCell>,
     'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 300 }}>{entry.artist}</TableCell>,
     'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 400 }}>{entry.title}</TableCell>,
-    'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
-    'Genre': entry => <TableCell>{entry.genre}</TableCell>,
+    'BPM': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 60 }}>{entry.bpm}</TableCell>,
+    'Genre': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 200 }}>{entry.genre}</TableCell>,
   };
 
   return (
