@@ -16,10 +16,7 @@ export default function TrackHistory({ history, players }) {
     'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 120, fontSize: { xs: '0.8rem', sm: '1rem' } }}>{entry.artist}</TableCell>,
     'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 160 }}>{entry.title}</TableCell>,
     'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
-    'Genre': entry => {
-      const player = players[entry.player]; // Assuming entry.player corresponds to the player ID
-      return <TableCell>{player?.track?.genre || 'Unknown'}</TableCell>;
-    },
+    'Genre': entry => <TableCell>{players[entry.player]?.track?.genre || 'Unknown'}</TableCell>,
   };
 
   return (
