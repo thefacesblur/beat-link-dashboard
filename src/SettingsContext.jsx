@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const defaultFields = ['Time', 'Deck', 'Artist', 'Title', 'BPM'];
+const defaultFields = ['Time', 'Deck', 'Artist', 'Title', 'BPM', 'Genre'];
 const STORAGE_KEY = 'dj-dashboard-settings';
 
 const SettingsContext = createContext();
