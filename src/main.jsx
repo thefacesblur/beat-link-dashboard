@@ -1,108 +1,58 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { useSettings, SettingsProvider } from './SettingsContext';
 
-// Suppress source map warnings in development
-if (import.meta.env.DEV) {
-  const originalConsoleError = console.error;
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' && 
-      (args[0].includes('source map') || 
-       args[0].includes('Failed to parse source map'))
-    ) {
-      // Ignore source map warnings
-      return;
-    }
-    originalConsoleError.apply(console, args);
-  };
-}
-
-// Create themes only once, outside component tree to avoid recreation
-const createAppTheme = (mode) => createTheme({
+// Theme definitions
+const darkTheme = createTheme({
   palette: {
-    mode,
+    mode: 'dark',
     primary: { main: '#29D9B9' },
     secondary: { main: '#dbdbdb' },
-    background: { 
-      default: mode === 'dark' ? '#141414' : '#f5f5f5', 
-      paper: mode === 'dark' ? '#1e1e1e' : '#ffffff'
-    },
-    text: { 
-      primary: mode === 'dark' ? undefined : '#333333'
-    }
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          scrollbarWidth: 'thin',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-            height: '8px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: mode === 'dark' ? '#444444' : '#bbbbbb',
-            borderRadius: '4px',
-          },
-        },
-      },
-    },
+    background: { default: '#141414', paper: '#1e1e1e' },
   },
 });
 
-// Memoized theme wrapper component
-const ThemeWrapper = React.memo(() => {
-  const { theme: themeSetting } = useSettings();
-  
-  // Determine theme based on system preference if needed
-  const effectiveTheme = useMemo(() => {
-    if (themeSetting !== 'system') return themeSetting;
-    
+const lightTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: { main: '#29D9B9' },
+    secondary: { main: '#dbdbdb' },
+    background: { default: '#f5f5f5', paper: '#ffffff' },
+    text: { primary: '#333333' }
+  },
+});
+
+function ThemedApp({ themeName }) {
+  // Determine if we should use light, dark, or system
+  let mode = themeName;
+  if (themeName === 'system') {
     // Check system preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-      return 'light';
+      mode = 'light';
+    } else {
+      mode = 'dark';
     }
-    return 'dark';
-  }, [themeSetting]);
-  
-  // Memoize theme creation
-  const muiTheme = useMemo(() => 
-    createAppTheme(effectiveTheme)
-  , [effectiveTheme]);
-  
+  }
+
+  // Choose the appropriate theme object
+  const muiTheme = mode === 'light' ? lightTheme : darkTheme;
+
   return (
-    <ThemeProvider theme={muiTheme}>
+    <ThemeProvider theme={muiTheme} key={mode}>
       <CssBaseline />
       <App />
     </ThemeProvider>
   );
-});
-
-// Add system theme detection listener
-if (window.matchMedia) {
-  const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  
-  try {
-    // Modern browsers
-    colorSchemeQuery.addEventListener('change', () => {
-      // This will trigger a re-render in components using system theme
-      window.dispatchEvent(new Event('system-theme-change'));
-    });
-  } catch (e) {
-    console.warn('Browser does not support mediaQuery listeners');
-  }
 }
 
-// Only create the root once
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error('Failed to find the root element');
+function ThemeWrapper() {
+  const { theme } = useSettings();
+  return <ThemedApp themeName={theme} key={theme} />;
 }
 
-ReactDOM.createRoot(rootElement).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <SettingsProvider>
       <ThemeWrapper />
