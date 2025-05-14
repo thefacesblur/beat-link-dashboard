@@ -32,7 +32,7 @@ export default function TrackHistory({ history, players }) {
             <TableHead>
               <TableRow>
                 {trackHistoryFields.map(field => (
-                  <TableCell key={field}>{field}</TableCell>
+                  <TableCell key={field} sx={{ fontWeight: 'bold' }}>{field}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
