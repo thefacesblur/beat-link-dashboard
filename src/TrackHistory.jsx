@@ -16,7 +16,7 @@ export default function TrackHistory({ history, players }) {
     'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 300 }}>{entry.artist}</TableCell>,
     'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 400 }}>{entry.title}</TableCell>,
     'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
-    'Genre': entry => <TableCell>{entry.genre || 'Unknown'}</TableCell>,
+    'Genre': entry => <TableCell>{entry.genre}</TableCell>,
   };
 
   return (
