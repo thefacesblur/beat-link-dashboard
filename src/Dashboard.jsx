@@ -247,7 +247,9 @@ function exportHistory(history, format) {
   if (!history.length) return;
 
   let content = '';
-  let filename = `track_history.${format}`;
+  const dateStamp = new Date().toISOString().split('T')[0];
+  let filename = `track_history_${dateStamp}.${format}`;
+
   if (format === 'json') {
     content = JSON.stringify(history, null, 2);
   } else if (format === 'csv') {
@@ -262,7 +264,7 @@ function exportHistory(history, format) {
     content = history.map(entry =>
       `${new Date(entry.timestamp).toLocaleString()} | Deck ${entry.player} | ${entry.artist} - ${entry.title} | BPM: ${entry.bpm}`
     ).join('\n');
-    filename = `track_history_${new Date().toISOString().split('T')[0]}.txt`;
+    filename = `track_history_${dateStamp}.txt`;
   }
 
   const blob = new Blob([content], { type: 'text/plain' });
