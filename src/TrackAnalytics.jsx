@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Card, CardContent, Grid } from '@mui/material';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const GENRE_COLORS = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1', '#a4de6c', '#d0ed57', '#d8854f', '#d0ed57', '#a28fd0'
@@ -31,6 +31,17 @@ export default function TrackAnalytics({ history }) {
     bpm: bpm.toString(),
     count: bpmBuckets[bpm]
   }));
+
+  // Genre Distribution
+  const genreCounts = {};
+  history.forEach(entry => {
+    const genre = entry.genre || 'Unknown';
+    genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+  });
+  
+  const genreData = Object.entries(genreCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value); // Sort by count descending
 
   return (
     <Box sx={{ mt: 2  }}>
@@ -82,6 +93,37 @@ export default function TrackAnalytics({ history }) {
                     <Tooltip />
                     <Bar dataKey="count" fill="#29D9B9" />
                   </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        {/* New Genre Distribution Chart */}
+        <Grid item xs={12} md={6}>
+          <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <CardContent sx={{ flex: 1, width: '100%' }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ textAlign: 'center' }}>Genre Distribution</Typography>
+              <Box sx={{ width: 600, height: 200, mx: 'auto' }}>
+                <ResponsiveContainer width="90%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={genreData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {genreData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={GENRE_COLORS[index % GENRE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name, props) => [`${value} tracks`, props.payload.name]} />
+                    <Legend />
+                  </PieChart>
                 </ResponsiveContainer>
               </Box>
             </CardContent>
