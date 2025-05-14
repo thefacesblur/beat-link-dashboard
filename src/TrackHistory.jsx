@@ -13,8 +13,8 @@ export default function TrackHistory({ history, players }) {
   const fieldMap = {
     'Time': entry => <TableCell sx={{ whiteSpace: 'nowrap', width: '100px' }}>{new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</TableCell>,
     'Deck': entry => <TableCell sx={{ whiteSpace: 'nowrap', width: '60px' }}>{entry.player}</TableCell>,
-    'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 120, fontSize: { xs: '0.8rem', sm: '1rem' } }}>{entry.artist}</TableCell>,
-    'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 300, fontSize: { xs: '0.8rem', sm: '1rem' } }}>{entry.title}</TableCell>,
+    'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 200}}>{entry.artist}</TableCell>,
+    'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: 400 }}>{entry.title}</TableCell>,
     'BPM': entry => <TableCell>{entry.bpm}</TableCell>,
     'Genre': entry => <TableCell>{entry.genre || 'Unknown'}</TableCell>,
   };
