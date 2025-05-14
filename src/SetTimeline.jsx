@@ -8,6 +8,9 @@ const formatDuration = (ms) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
+// Maximum reasonable time between tracks (5 minutes)
+const MAX_GAP_BETWEEN_TRACKS = 5 * 60 * 1000;
+
 const SetTimeline = function SetTimeline({ history }) {
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [isHovering, setIsHovering] = useState(false);
@@ -20,25 +23,50 @@ const SetTimeline = function SetTimeline({ history }) {
   const totalDuration = useMemo(() => end - start, [end, start]);
   const safeDuration = useMemo(() => totalDuration > 0 ? totalDuration : 60000, [totalDuration]);
 
+  // Calculate actual durations for all tracks
+  const trackDurations = useMemo(() => {
+    return history.map((entry, i) => {
+      // If we have the track's actual duration, use it
+      if (entry.duration) {
+        // Convert to milliseconds if needed
+        const durationMs = entry.duration > 1000 ? entry.duration : entry.duration * 1000;
+        return durationMs;
+      }
+      
+      // Otherwise estimate based on timestamps
+      const next = history[i + 1];
+      if (next) {
+        const gap = next.timestamp - entry.timestamp;
+        // If gap is unreasonably large, cap it
+        return gap > MAX_GAP_BETWEEN_TRACKS ? MAX_GAP_BETWEEN_TRACKS : gap;
+      }
+      
+      // For the last track, use a reasonable default (3 minutes) or actual duration
+      return 3 * 60 * 1000;
+    });
+  }, [history]);
+
   // Define getTrackStats as a function
   function getTrackStats(index) {
     if (index === null || index >= history.length) return null;
     const track = history[index];
-    const next = history[index + 1];
-    const trackEnd = next ? next.timestamp : end;
-    const duration = trackEnd - track.timestamp;
+    const duration = trackDurations[index];
     const percentOfSet = ((duration / safeDuration) * 100).toFixed(1);
+    
+    // Calculate end time based on duration
+    const trackEndTime = new Date(track.timestamp + duration);
+    
     return {
       track,
       duration,
       percentOfSet,
       formattedDuration: formatDuration(duration),
       startTime: new Date(track.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      endTime: new Date(trackEnd).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      endTime: trackEndTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
   }
 
-  const selectedTrackStats = useMemo(() => getTrackStats(selectedTrack), [selectedTrack, history, end, safeDuration]);
+  const selectedTrackStats = useMemo(() => getTrackStats(selectedTrack), [selectedTrack, history, trackDurations, safeDuration]);
 
   return (
     <Paper 
@@ -88,18 +116,17 @@ const SetTimeline = function SetTimeline({ history }) {
         onMouseLeave={() => setIsHovering(false)}
       >
         {history.map((entry, i) => {
-          const next = history[i + 1];
-          // If only one track, make it fill the bar
-          const entryEnd = next ? next.timestamp : end;
-          let widthPercent = ((entryEnd - entry.timestamp) / safeDuration) * 100;
+          // Use the calculated duration
+          const duration = trackDurations[i];
+          let widthPercent = (duration / safeDuration) * 100;
+          
           if (history.length === 1) widthPercent = 100;
           // Minimum width for visibility
           const minWidth = 3;
           if (widthPercent < minWidth) widthPercent = minWidth;
           
-          // Track duration for tooltip
-          const duration = entryEnd - entry.timestamp;
           const durationText = formatDuration(duration);
+          const trackEndTime = new Date(entry.timestamp + duration);
           
           return (
             <Tooltip
@@ -113,7 +140,7 @@ const SetTimeline = function SetTimeline({ history }) {
                   <Typography variant="body2">
                     {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     {' - '}
-                    {new Date(entryEnd).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    {trackEndTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </Typography>
                   <Typography variant="body2">Duration: {durationText}</Typography>
                 </Box>
