@@ -4,6 +4,22 @@ import App from './App';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { useSettings, SettingsProvider } from './SettingsContext';
 
+// Suppress source map warnings in development
+if (import.meta.env.DEV) {
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' && 
+      (args[0].includes('source map') || 
+       args[0].includes('Failed to parse source map'))
+    ) {
+      // Ignore source map warnings
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 // Create themes only once, outside component tree to avoid recreation
 const createAppTheme = (mode) => createTheme({
   palette: {
