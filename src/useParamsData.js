@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSettings } from './SettingsContext';
 
-export default function useParamsData(pollInterval = 500) {
-  let contextInterval;
-  try {
-    contextInterval = useSettings()?.pollingInterval;
-  } catch (e) {}
-  const effectiveInterval = contextInterval || pollInterval;
+export default function useParamsData() {
+  const { pollingInterval } = useSettings();
+  const effectiveInterval = pollingInterval || 500;
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);

@@ -20,6 +20,10 @@ export default function SettingsPanel({ open, onClose }) {
     }
   };
 
+  const handlePollingChange = (newInterval) => {
+    setPollingInterval(newInterval);
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>
@@ -35,7 +39,7 @@ export default function SettingsPanel({ open, onClose }) {
             <TextField
               type="number"
               value={pollingInterval}
-              onChange={e => setPollingInterval(Number(e.target.value))}
+              onChange={e => handlePollingChange(Number(e.target.value))}
               inputProps={{ min: 100, step: 100 }}
               size="small"
             />
