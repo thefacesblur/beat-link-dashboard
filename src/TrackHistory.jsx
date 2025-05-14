@@ -11,7 +11,7 @@ export default function TrackHistory({ history, players }) {
 
   // Map field names to render logic
   const fieldMap = {
-    'Time': entry => <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</TableCell>,
+    'Time': entry => <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '60px', overflow: 'hidden' }}>{new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</TableCell>,
     'Deck': entry => <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.player}</TableCell>,
     'Artist': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: '250px' }}>{entry.artist}</TableCell>,
     'Title': entry => <TableCell sx={{ wordBreak: 'break-word', maxWidth: '400px' }}>{entry.title}</TableCell>,
