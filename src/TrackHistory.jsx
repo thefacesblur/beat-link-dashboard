@@ -14,11 +14,14 @@ const staticFieldMap = {
 };
 
 function TrackHistory({ history, players }) {
+  // Early return before any hooks to avoid conditional hook calls
+  if (!history || !history.length) {
+    return null;
+  }
+
   const [tab, setTab] = useState(0);
   const { analyticsEnabled, trackHistoryFields } = useSettings ? useSettings() : { analyticsEnabled: true, trackHistoryFields: ['Time', 'Deck', 'Artist', 'Title', 'BPM', 'Genre'] };
   
-  if (!history.length) return null;
-
   // Memoize the fieldMap in case trackHistoryFields changes
   const fieldMap = useMemo(() => staticFieldMap, []);
   // Memoize reversed history for rendering
