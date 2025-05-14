@@ -146,7 +146,7 @@ export default function Dashboard({ params }) {
     } else if (id === HISTORY_ID) {
       return (
         <SortableSection key={id} id={id} gridColumn={isMobile ? undefined : '1 / -1'}>
-          <TrackHistory history={history} />
+          <TrackHistory history={history} players={players} />
         </SortableSection>
       );
     } else {
