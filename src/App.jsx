@@ -4,6 +4,7 @@ import Dashboard from './Dashboard';
 import { Container, Typography, Box, Alert, CircularProgress, IconButton, useTheme } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsPanel from './SettingsPanel';
+import TrackHistory from './TrackHistory';
 
 function App() {
   const { data, error } = useParamsData();
@@ -27,6 +28,7 @@ function App() {
         </Box>
       )}
       {data && <Dashboard params={data} />}
+      {data && <TrackHistory history={data.history} players={data.players} />}
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Container>
   );
