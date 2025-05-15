@@ -1,3 +1,7 @@
 node_modules
 tunnel.sh
 run-cloud-backend.bat
+.clj-kondo*
+.lsp*
+beat-link-dashboard.json
+system-metrics-dashboard.json
