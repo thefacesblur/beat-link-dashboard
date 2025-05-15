@@ -14,7 +14,7 @@ function App() {
   return (
     <Container maxWidth="lg" sx={{ pt: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={-2}>
-        <Typography variant="h4" gutterBottom sx={{ ml: 3.2 }}>
+        <Typography variant="h4" gutterBottom sx={{ ml: 3.8 }}>
           Beat Link Dashboard
         </Typography>
         <IconButton onClick={() => setSettingsOpen(true)} size="large" aria-label="Settings" sx={{ mr: 3 }}>
