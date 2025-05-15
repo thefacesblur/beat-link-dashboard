@@ -232,6 +232,16 @@
                  "Cache-Control" "max-age=1"}
        :body    (clojure.java.io/resource "placeholder.png")})))
 
+(defn request-logger
+  "Simple middleware that logs requests to the console."
+  [handler]
+  (fn [request]
+    (println (str "[" (.format (java.text.SimpleDateFormat. "HH:mm:ss") (java.util.Date.)) "] "
+                  (:request-method request) " "
+                  (:uri request)
+                  (when-let [q (:query-string request)] (str "?" q))))
+    (handler request)))
+
 ;; App routes
 (def app-routes
   (compojure/routes
@@ -251,6 +261,7 @@
 ;; Create the app with middleware
 (def app
   (-> app-routes
+      (request-logger)
       (ring-defaults/wrap-defaults (assoc-in ring-defaults/api-defaults [:responses :content-types] false))))
 
 ;; DJ Link connection
