@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DJ Link Overlay Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .player {
+            background-color: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .player-number {
+            background-color: #5a5a5a;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .player-status {
+            display: flex;
+            gap: 10px;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-top: 5px;
+        }
+        .playing {
+            background-color: #4CAF50;
+        }
+        .paused {
+            background-color: #FFC107;
+        }
+        .stopped {
+            background-color: #F44336;
+        }
+        .track-info {
+            margin-bottom: 10px;
+        }
+        .track-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .track-artist {
+            font-size: 16px;
+            color: #bbb;
+            margin: 5px 0;
+        }
+        .track-details {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #999;
+        }
+        .waveform {
+            margin-top: 15px;
+            width: 100%;
+            height: auto;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 18px;
+            color: #999;
+        }
+        .time {
+            font-family: monospace;
+            font-size: 18px;
+        }
+        .no-players {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DJ Link Overlay Client</h1>
+        <div id="players"></div>
+    </div>
+
+    <script>
+        // Update interval in milliseconds
+        const UPDATE_INTERVAL = 250;
+        
+        // Function to fetch DJ data
+        async function fetchDJData() {
+            try {
+                const response = await fetch('/params.json');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching DJ data:', error);
+                return null;
+            }
+        }
+        
+        // Function to format time
+        function formatTime(timeObj) {
+            if (!timeObj) return "--:--:--.-";
+            return timeObj.display || "--:--:--.-";
+        }
+        
+        // Function to render player data
+        function renderPlayers(data) {
+            const playersContainer = document.getElementById('players');
+            playersContainer.innerHTML = '';
+            
+            if (!data || !data.players) {
+                playersContainer.innerHTML = '<div class="no-players">No players detected</div>';
+                return;
+            }
+            
+            // Get players and sort them by number
+            const players = Object.values(data.players);
+            players.sort((a, b) => a.number - b.number);
+            
+            if (players.length === 0) {
+                playersContainer.innerHTML = '<div class="no-players">No players detected</div>';
+                return;
+            }
+            
+            // Create DOM elements for each player
+            players.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player';
+                
+                // Determine player status
+                const isPlaying = player.is_playing;
+                const isPaused = player.is_paused;
+                let statusClass = 'stopped';
+                let statusText = 'Stopped';
+                
+                if (isPlaying) {
+                    statusClass = 'playing';
+                    statusText = 'Playing';
+                } else if (isPaused) {
+                    statusClass = 'paused';
+                    statusText = 'Paused';
+                }
+                
+                // Player header with number and status
+                const header = `
+                    <div class="player-header">
+                        <div class="player-number">${player.number}</div>
+                        <div class="player-status">
+                            <div class="status-dot ${statusClass}"></div>
+                            <div>${statusText}</div>
+                            ${player.is_master ? '<div style="margin-left: 10px; color: #FFC107;">MASTER</div>' : ''}
+                            ${player.is_synced ? '<div style="margin-left: 10px; color: #4CAF50;">SYNC</div>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Track information
+                let trackInfo = '<div class="track-info"><p class="track-title">No track loaded</p></div>';
+                if (player.track) {
+                    trackInfo = `
+                        <div class="track-info">
+                            <p class="track-title">${player.track.title || 'Unknown Track'}</p>
+                            <p class="track-artist">${player.track.artist || 'Unknown Artist'}</p>
+                            <div class="track-details">
+                                <div>BPM: ${player.track_bpm ? player.track_bpm.toFixed(1) : '--'}</div>
+                                <div>Pitch: ${player.pitch_display || '0.00%'}</div>
+                                <div>Beat: ${player.beat_number || '--'} / ${player.beat_within_bar || '--'}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Time information
+                let timeInfo = '<div class="track-details">Time: --:--:--.-</div>';
+                if (player.time_played) {
+                    timeInfo = `
+                        <div class="track-details">
+                            <div class="time">Played: ${formatTime(player.time_played)}</div>
+                            ${player.time_remaining ? `<div class="time">Remain: ${formatTime(player.time_remaining)}</div>` : ''}
+                        </div>
+                    `;
+                }
+                
+                // Waveform
+                const waveform = `
+                    <div class="waveform">
+                        <img src="/wave-preview/${player.number}?width=800&height=100&t=${Date.now()}" 
+                             alt="Waveform" style="width: 100%; max-height: 100px;">
+                    </div>
+                `;
+                
+                // Combine all sections
+                playerDiv.innerHTML = header + trackInfo + timeInfo + waveform;
+                playersContainer.appendChild(playerDiv);
+            });
+        }
+        
+        // Main update function
+        async function update() {
+            const data = await fetchDJData();
+            renderPlayers(data);
+        }
+        
+        // Initial update
+        update();
+        
+        // Set interval for updates
+        setInterval(update, UPDATE_INTERVAL);
+    </script>
+</body>
+</html>
