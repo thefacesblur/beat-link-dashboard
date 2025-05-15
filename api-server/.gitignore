@@ -4,7 +4,6 @@
 profiles.clj
 pom.xml
 pom.xml.asc
-*.jar
 *.class
 /.lein-*
 /.nrepl-port
@@ -13,4 +12,4 @@ pom.xml.asc
 .hg/
 .calva*
 start-beat-link-api.bat
-lein.bat
+lein*
