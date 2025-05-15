@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -62,49 +62,46 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function TrackAnalytics({ history }) {
+const TrackAnalytics = function TrackAnalytics({ history }) {
   if (!history || !history.length) return null;
 
-  // Total tracks
+  // Memoize expensive calculations
   const totalTracks = history.length;
-  // Unique artists
-  const uniqueArtists = new Set(history.map(e => e.artist)).size;
-  // Average BPM
-  const validBpms = history.map(e => Number(e.bpm)).filter(bpm => !isNaN(bpm));
-  const avgBpm = validBpms.length ? (validBpms.reduce((a, b) => a + b, 0) / validBpms.length).toFixed(1) : 'N/A';
-  // Set duration
+  const uniqueArtists = useMemo(() => new Set(history.map(e => e.artist)).size, [history]);
+  const validBpms = useMemo(() => history.map(e => Number(e.bpm)).filter(bpm => !isNaN(bpm)), [history]);
+  const avgBpm = useMemo(() => validBpms.length ? (validBpms.reduce((a, b) => a + b, 0) / validBpms.length).toFixed(1) : 'N/A', [validBpms]);
   const start = history[0].timestamp;
   const end = history[history.length - 1].timestamp;
   const durationMs = end - start;
-  const durationMin = durationMs > 0 ? (durationMs / 60000).toFixed(1) : 'N/A';
+  const durationMin = useMemo(() => durationMs > 0 ? (durationMs / 60000).toFixed(1) : 'N/A', [durationMs]);
 
-  // BPM Histogram
-  const bpmBuckets = {};
-  validBpms.forEach(bpm => {
-    bpmBuckets[bpm] = (bpmBuckets[bpm] || 0) + 1;
-  });
-  
-  const bpmData = Object.keys(bpmBuckets)
-    .sort((a, b) => Number(a) - Number(b))
-    .map(bpm => ({
-      bpm: bpm.toString(),
-      count: bpmBuckets[bpm]
-    }));
+  const bpmData = useMemo(() => {
+    const bpmBuckets = {};
+    validBpms.forEach(bpm => {
+      bpmBuckets[bpm] = (bpmBuckets[bpm] || 0) + 1;
+    });
+    return Object.keys(bpmBuckets)
+      .sort((a, b) => Number(a) - Number(b))
+      .map(bpm => ({
+        bpm: bpm.toString(),
+        count: bpmBuckets[bpm]
+      }));
+  }, [validBpms]);
 
-  // Genre Distribution
-  const genreCounts = {};
-  history.forEach(entry => {
-    const genre = entry.genre || 'Unknown';
-    genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-  });
-  
-  const genreData = Object.entries(genreCounts)
-    .map(([name, value]) => ({ 
-      name, 
-      value,
-      percent: value / totalTracks
-    }))
-    .sort((a, b) => b.value - a.value);
+  const genreData = useMemo(() => {
+    const genreCounts = {};
+    history.forEach(entry => {
+      const genre = entry.genre || 'Unknown';
+      genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    });
+    return Object.entries(genreCounts)
+      .map(([name, value]) => ({ 
+        name, 
+        value,
+        percent: value / totalTracks
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [history, totalTracks]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -264,4 +261,6 @@ export default function TrackAnalytics({ history }) {
       </Box>
     </Box>
   );
-}
+};
+
+export default React.memo(TrackAnalytics);

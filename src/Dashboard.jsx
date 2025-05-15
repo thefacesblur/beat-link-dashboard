@@ -120,6 +120,7 @@ export default function Dashboard({ params }) {
             duration: player.track.duration,
             trackId,
             genre: player.track.genre || 'Unknown',
+            key: player.track.key || 'Unknown',
           }
         ]);
         lastTrackIds.current[player.number] = trackId;
@@ -198,7 +199,7 @@ export default function Dashboard({ params }) {
             gap={2}
             width="100%"
             maxWidth="100vw"
-            overflowX="hidden"
+            sx={{ overflow: 'hidden' }}
           >
             {dashboardSections}
           </Box>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import TrackMetadata from './TrackMetadata';
 import AlbumArt from './AlbumArt';
 import WaveformPreview from './WaveformPreview';
@@ -12,7 +12,7 @@ function getPlayerStatus(player) {
   return 'Idle';
 }
 
-function CircularBeatVisualizer({ beatWithinBar, beatsPerBar = 4 }) {
+const CircularBeatVisualizer = React.memo(function CircularBeatVisualizer({ beatWithinBar, beatsPerBar = 4 }) {
   // Each quadrant is a 90-degree arc. Active one pulses.
   // SVG arcs: start at 0deg (right), move clockwise.
   const size = 40;
@@ -57,14 +57,14 @@ function CircularBeatVisualizer({ beatWithinBar, beatsPerBar = 4 }) {
       </svg>
     </Box>
   );
-}
+});
 
-function TrackProgressBar({ timePlayedMs, durationSec, beatWithinBar }) {
-  const progress = durationSec
+const TrackProgressBar = React.memo(function TrackProgressBar({ timePlayedMs, durationSec, beatWithinBar }) {
+  const progress = useMemo(() => durationSec
     ? Math.min(100, (timePlayedMs / (durationSec * 1000)) * 100)
-    : 0;
-  const timePlayed = msToTime(timePlayedMs);
-  const timeRemaining = msToTime(durationSec * 1000 - timePlayedMs);
+    : 0, [timePlayedMs, durationSec]);
+  const timePlayed = useMemo(() => msToTime(timePlayedMs), [timePlayedMs]);
+  const timeRemaining = useMemo(() => msToTime(durationSec * 1000 - timePlayedMs), [durationSec, timePlayedMs]);
 
   return (
     <Box mt={3.5} display="flex" alignItems="center" gap={1.5} mb={-0.5}>
@@ -88,7 +88,7 @@ function TrackProgressBar({ timePlayedMs, durationSec, beatWithinBar }) {
       </Box>
     </Box>
   );
-}
+});
 
 function msToTime(ms) {
   if (!ms || ms < 0) return '--:--';
@@ -98,7 +98,7 @@ function msToTime(ms) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function PlayerStatusIndicator({ online }) {
+const PlayerStatusIndicator = React.memo(function PlayerStatusIndicator({ online }) {
   return (
     <FiberManualRecordIcon
       fontSize="small"
@@ -106,9 +106,9 @@ function PlayerStatusIndicator({ online }) {
       titleAccess={online ? 'Online' : 'Offline'}
     />
   );
-}
+});
 
-export default function PlayerCard({ player }) {
+const PlayerCard = function PlayerCard({ player }) {
   return (
     <Card sx={{ width: '100%', maxWidth: 600, minWidth: 300, backgroundColor: 'background.paper', margin: '0 auto', borderRadius: 3 }}>
       <CardContent>
@@ -134,4 +134,6 @@ export default function PlayerCard({ player }) {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default React.memo(PlayerCard);
