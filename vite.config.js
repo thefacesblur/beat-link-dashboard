@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
+// Server-side, shared track history for all users
+let trackHistory = [];
+
 export default defineConfig({
   plugins: [react()],
   build: {
@@ -22,6 +25,46 @@ export default defineConfig({
       '/wave-preview': 'http://localhost:17081',
       '/wave-detail': 'http://localhost:17081'
     },
+    // Add track history API
+    configureServer(server) {
+      // GET /api/track-history - Get all track history
+      server.middlewares.use('/api/track-history', (req, res, next) => {
+        if (req.method === 'GET') {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(trackHistory));
+        } 
+        // POST /api/track-history - Add a track to history
+        else if (req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const track = JSON.parse(body);
+              if (track) {
+                trackHistory.push(track);
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+              } else {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid track data' }));
+              }
+            } catch (e) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+          });
+        }
+        // DELETE /api/track-history - Clear track history
+        else if (req.method === 'DELETE') {
+          trackHistory = [];
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true }));
+        } 
+        else {
+          next();
+        }
+      });
+    }
   },
   resolve: {
     alias: {

@@ -37,12 +37,7 @@ const TIMELINE_ID = 'dj-set-timeline';
 const HISTORY_ID = 'track-history';
 
 export default function Dashboard({ params }) {
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('trackHistory');
-    if (!saved) return [];
-    const arr = JSON.parse(saved);
-    return dedupeHistory(arr);
-  });
+  const [history, setHistory] = useState([]);
   const lastTrackIds = useRef({});
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState(null);
@@ -50,8 +45,6 @@ export default function Dashboard({ params }) {
   const players = params.players
     ? Object.values(params.players).filter(p => p.number === 1 || p.number === 2)
     : [];
-
-
 
   // Store player order in state
   const initialOrder = players.map(p => p.number);
@@ -101,7 +94,19 @@ export default function Dashboard({ params }) {
     }
   }
 
-  // Detect track changes and update history
+  // Fetch history on component mount
+  useEffect(() => {
+    fetch('/api/track-history')
+      .then(res => res.json())
+      .then(data => {
+        setHistory(data);
+      })
+      .catch(err => {
+        console.error("Failed to fetch track history:", err);
+      });
+  }, []);
+
+  // Replace the track change detection logic to save to server:
   useEffect(() => {
     let now = Date.now();
     players.forEach(player => {
@@ -112,22 +117,35 @@ export default function Dashboard({ params }) {
         if (history.length && history[history.length - 1].timestamp === now) {
           now += 1;
         }
-        setHistory(prev => [
-          ...prev,
-          {
-            timestamp: now,
-            player: player.number,
-            artist: player.track.artist,
-            title: player.track.title,
-            bpm: player.track.bpm || player['track-bpm'],
-            duration: player.track.duration,
-            trackId,
-            genre: player.track.genre || 'Unknown',
-            key: player.track.key || 'Unknown',
-          }
-        ]);
-        lastTrackIds.current[player.number] = trackId;
         
+        // Create new track entry
+        const newTrack = {
+          timestamp: now,
+          player: player.number,
+          artist: player.track.artist,
+          title: player.track.title,
+          bpm: player.track.bpm || player['track-bpm'],
+          duration: player.track.duration,
+          trackId,
+          genre: player.track.genre || 'Unknown',
+          key: player.track.key || 'Unknown',
+        };
+        
+        // Update local state
+        setHistory(prev => [...prev, newTrack]);
+        
+        // Save to server
+        fetch('/api/track-history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newTrack)
+        }).catch(err => {
+          console.error("Failed to save track to history:", err);
+        });
+        
+        lastTrackIds.current[player.number] = trackId;
       }
     });
   }, [players]);
@@ -140,11 +158,6 @@ export default function Dashboard({ params }) {
       setError(null); // Clear error if data is fetched successfully
     }
   }, [params]);
-
-  // Persist history in localStorage
-  useEffect(() => {
-    localStorage.setItem('trackHistory', JSON.stringify(history));
-  }, [history]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -229,19 +242,28 @@ export default function Dashboard({ params }) {
         <Button onClick={() => exportHistory(history, 'json')}>Export JSON</Button>
         <Button onClick={() => exportHistory(history, 'txt')}>Export TXT</Button>
         <Button
-        variant="contained"
-        color="primary"
-        onClick={() => {
-          if (window.confirm('Are you sure you want to reset the session?')) {
-            setHistory([]);
-            localStorage.removeItem('trackHistory');
-          }
-        }}
-      >
-        Restart History Session
-      </Button>
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            if (window.confirm('Are you sure you want to reset the session?')) {
+              // Clear history on server
+              fetch('/api/track-history', {
+                method: 'DELETE'
+              })
+                .then(res => res.json())
+                .then(() => {
+                  // Update local state
+                  setHistory([]);
+                })
+                .catch(err => {
+                  console.error("Failed to reset track history:", err);
+                });
+            }
+          }}
+        >
+          Restart History Session
+        </Button>
       </ButtonGroup>
-      
     </Box>
   );
 }
