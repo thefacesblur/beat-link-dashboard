@@ -3,7 +3,7 @@ import PlayerCard from './PlayerCard';
 import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery, Snackbar } from '@mui/material';
 import TrackHistory from './TrackHistory';
 import SetTimeline from './SetTimeline';
-import useMetrics from './useMetrics';
+
 import {
   DndContext,
   closestCenter,
@@ -51,8 +51,7 @@ export default function Dashboard({ params }) {
     ? Object.values(params.players).filter(p => p.number === 1 || p.number === 2)
     : [];
 
-  // Initialize metrics hook
-  const { reportTrackChange } = useMetrics({ history, players });
+
 
   // Store player order in state
   const initialOrder = players.map(p => p.number);
@@ -129,8 +128,6 @@ export default function Dashboard({ params }) {
         ]);
         lastTrackIds.current[player.number] = trackId;
         
-        // Report track change to metrics system
-        reportTrackChange(player.number);
       }
     });
   }, [players, reportTrackChange]);
