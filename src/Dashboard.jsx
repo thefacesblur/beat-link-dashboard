@@ -123,49 +123,86 @@ export default function Dashboard({ params }) {
       });
   }, []);
 
-  // Update your useEffect for detecting track changes:
+  // Modified "clean history" effect that runs on component mount
   useEffect(() => {
-    // Guard against empty player data
+    console.log("Component mounted, cleaning and fetching history");
+    
+    // First, explicitly clean the history on the server
+    fetch('/api/track-history/clean', { 
+      method: 'PATCH' 
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to clean track history');
+      return res.json();
+    })
+    .then(data => {
+      console.log("History cleaned:", data);
+      
+      // Now fetch the cleaned history
+      return fetch('/api/track-history');
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to fetch track history');
+      return res.json();
+    })
+    .then(data => {
+      console.log(`Fetched ${data.length} history entries`);
+      setHistory(data);
+    })
+    .catch(err => {
+      console.error("History operation failed:", err);
+      // Try a simple fetch as fallback
+      fetch('/api/track-history')
+        .then(res => res.json())
+        .then(data => setHistory(data));
+    });
+  }, []);  // Empty dependency array means this runs once on mount
+
+  // Modified track detection to be more reliable
+  useEffect(() => {
     if (!players || players.length === 0) return;
     
-    // Create a Set of tracks we've already sent to avoid duplicates
-    const processedTracks = new Set();
+    // Map of player number to last processed track ID 
+    const lastProcessedTracks = useRef(new Map());
     
-    // Process each player
     players.forEach(player => {
-      const trackId = player.track?.id;
-      if (!trackId) return;
+      if (!player.track?.id) return;
       
-      // Create a unique ID for this player+track combination
-      const uniqueTrackKey = `${player.number}-${trackId}`;
+      const { number, track } = player;
+      const trackId = track.id;
       
-      // Skip if we've already processed this track in this component lifecycle
-      if (processedTracks.has(uniqueTrackKey)) return;
-      processedTracks.add(uniqueTrackKey);
+      // Skip if we've already processed this exact track for this player
+      if (lastProcessedTracks.current.get(number) === trackId) {
+        return;
+      }
       
-      // Check if this track already exists in our local history
+      // Update our reference of processed tracks
+      lastProcessedTracks.current.set(number, trackId);
+      
+      // Check if this track is already in our history
       const trackExists = history.some(
-        entry => entry.player === player.number && entry.trackId === trackId
+        entry => entry.player === number && entry.trackId === trackId
       );
       
-      // Skip if track already exists in history
-      if (trackExists) return;
+      // Skip adding if it already exists
+      if (trackExists) {
+        console.log(`Skipping duplicate track: ${track.artist} - ${track.title} on deck ${number}`);
+        return;
+      }
       
-      // New track detected, create entry
+      console.log(`New track detected: ${track.artist} - ${track.title} on deck ${number}`);
+      
       const newTrack = {
         timestamp: Date.now(),
-        player: player.number,
-        artist: player.track.artist,
-        title: player.track.title,
-        bpm: player.track.bpm || player['track-bpm'],
-        duration: player.track.duration,
+        player: number,
+        artist: track.artist || 'Unknown Artist',
+        title: track.title || 'Unknown Title',
+        bpm: track.bpm || player['track-bpm'] || 0,
+        duration: track.duration || 0,
         trackId,
-        genre: player.track.genre || 'Unknown',
-        key: player.track.key || 'Unknown',
+        genre: track.genre || 'Unknown',
+        key: track.key || 'Unknown',
       };
-      
-      // Update local state optimistically (will be overwritten on fetch)
-      setHistory(prev => [...prev, newTrack]);
       
       // Send to server
       fetch('/api/track-history', {
@@ -175,40 +212,24 @@ export default function Dashboard({ params }) {
       })
       .then(res => res.json())
       .then(data => {
-        // Always refresh from server to ensure consistency
-        fetch('/api/track-history')
-          .then(res => res.json())
-          .then(serverHistory => {
-            setHistory(serverHistory);
-          });
+        if (data.added) {
+          console.log(`Track added to history: ${newTrack.artist} - ${newTrack.title}`);
+          
+          // Refresh our history from server to stay in sync
+          fetch('/api/track-history')
+            .then(res => res.json())
+            .then(serverHistory => {
+              setHistory(serverHistory);
+            });
+        } else {
+          console.log(`Server rejected track as duplicate: ${newTrack.artist} - ${newTrack.title}`);
+        }
       })
       .catch(err => {
-        console.error("Failed to save track:", err);
+        console.error("Failed to add track to history:", err);
       });
     });
-  }, [players]);
-
-  // Add an effect to clean history on load
-  useEffect(() => {
-    // Clean up any existing duplicates on component mount
-    fetch('/api/track-history', { method: 'PATCH', url: '/clean' })
-      .then(res => res.json())
-      .then(() => {
-        // Get the cleaned history
-        return fetch('/api/track-history');
-      })
-      .then(res => res.json())
-      .then(data => {
-        setHistory(data);
-      })
-      .catch(err => {
-        console.error("Failed to fetch track history:", err);
-        // Fall back to just fetching current history
-        fetch('/api/track-history')
-          .then(res => res.json())
-          .then(data => setHistory(data));
-      });
-  }, []);
+  }, [players, history]);
 
   // Handle API errors
   useEffect(() => {
@@ -261,17 +282,21 @@ export default function Dashboard({ params }) {
     }
   };
 
-  // Add this function to manually clean history if needed
-  const cleanHistoryNow = () => {
-    fetch('/api/track-history', { method: 'PATCH', url: '/clean' })
+  // Clean button handler (for debugging)
+  const handleCleanDuplicates = () => {
+    fetch('/api/track-history/clean', { method: 'PATCH' })
       .then(res => res.json())
-      .then(() => {
-        // Get the cleaned history
+      .then(data => {
+        console.log("Clean response:", data);
         return fetch('/api/track-history');
       })
       .then(res => res.json())
       .then(data => {
+        console.log(`Fetched ${data.length} cleaned entries`);
         setHistory(data);
+      })
+      .catch(err => {
+        console.error("Failed to clean duplicates:", err);
       });
   };
 
@@ -336,7 +361,13 @@ export default function Dashboard({ params }) {
         >
           Restart History Session
         </Button>
-        <Button onClick={cleanHistoryNow}>Clean Duplicates</Button>
+        <Button 
+          variant="outlined" 
+          onClick={handleCleanDuplicates}
+          sx={{ mb: 2, mt: 2, mr: 1 }}
+        >
+          Clean Duplicates
+        </Button>
       </ButtonGroup>
     </Box>
   );

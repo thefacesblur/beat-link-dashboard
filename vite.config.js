@@ -5,33 +5,28 @@ import { resolve } from 'path';
 // Server-side, shared track history for all users
 let trackHistory = [];
 
-// Much stricter duplicate check
-function isDuplicate(newTrack) {
-  // Look for any matching trackId+player combination - regardless of timestamp
-  return trackHistory.some(entry => 
-    entry.player === newTrack.player && 
-    entry.trackId === newTrack.trackId
-  );
-}
-
-// Clean existing history to remove all duplicates
+// Better deduplication directly in the core logic
 function cleanHistory() {
+  // Use a Map to ensure only one entry per player+trackId
   const uniqueTracks = new Map();
   
-  // Process entries in chronological order (keep first occurrence)
-  trackHistory.forEach(entry => {
+  // Process all tracks chronologically (oldest first)
+  [...trackHistory].sort((a, b) => a.timestamp - b.timestamp).forEach(entry => {
     const key = `${entry.player}-${entry.trackId}`;
+    // Only keep the first occurrence (oldest)
     if (!uniqueTracks.has(key)) {
       uniqueTracks.set(key, entry);
     }
   });
   
-  // Replace history with deduplicated version
-  trackHistory = Array.from(uniqueTracks.values())
-    .sort((a, b) => a.timestamp - b.timestamp);
-  
+  // Replace history with deduplicated array
+  trackHistory = Array.from(uniqueTracks.values());
+  console.log(`Cleaned history now has ${trackHistory.length} entries`);
   return trackHistory;
 }
+
+// Ensure we clean the history immediately when the server starts
+trackHistory = cleanHistory();
 
 export default defineConfig({
   plugins: [react()],
@@ -55,29 +50,38 @@ export default defineConfig({
     },
     // Add track history API
     configureServer(server) {
-      // GET /api/track-history - Get all track history
+      // Clean history at server start
+      cleanHistory();
+      
       server.middlewares.use('/api/track-history', (req, res, next) => {
+        // For all track history routes, parse URL for additional actions
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        
         if (req.method === 'GET') {
-          // Clean history before sending
+          // Always clean history before returning it
           const cleanedHistory = cleanHistory();
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(cleanedHistory));
         } 
-        // POST /api/track-history - Add a track to history
         else if (req.method === 'POST') {
           let body = '';
           req.on('data', chunk => { body += chunk; });
           req.on('end', () => {
             try {
               const track = JSON.parse(body);
-              if (track) {
-                // Check for duplicates before adding
-                if (!isDuplicate(track)) {
+              if (track && track.trackId && track.player) {
+                // Check if this track already exists
+                const exists = trackHistory.some(
+                  entry => entry.trackId === track.trackId && entry.player === track.player
+                );
+                
+                if (!exists) {
                   trackHistory.push(track);
+                  // Always clean after adding a new track
+                  cleanHistory();
                   res.writeHead(201, { 'Content-Type': 'application/json' });
                   res.end(JSON.stringify({ success: true, added: true }));
                 } else {
-                  // Duplicate found, don't add
                   res.writeHead(200, { 'Content-Type': 'application/json' });
                   res.end(JSON.stringify({ success: true, added: false, reason: 'duplicate' }));
                 }
@@ -87,17 +91,16 @@ export default defineConfig({
               }
             } catch (e) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+              res.end(JSON.stringify({ error: 'Invalid JSON', details: e.message }));
             }
           });
         }
-        // Add a PATCH endpoint to clean the history
-        else if (req.method === 'PATCH' && req.url.includes('clean')) {
+        else if (req.method === 'PATCH' && url.pathname.includes('/clean')) {
+          // Explicitly clean the history
           cleanHistory();
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true, historySize: trackHistory.length }));
         }
-        // DELETE /api/track-history - Clear track history
         else if (req.method === 'DELETE') {
           trackHistory = [];
           res.writeHead(200, { 'Content-Type': 'application/json' });
