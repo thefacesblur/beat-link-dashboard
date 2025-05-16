@@ -13,14 +13,14 @@ export default defineConfig({
     port: 5173,
     open: true,
     allowedHosts: ['localhost', 'app.thefacesblur.com'],
+    // These proxies are only used during development with Vite's dev server
+    // In production, the Express server in server.js handles these proxies
     proxy: {
       // Proxy API requests to the backend overlay server
       '/params.json': 'http://localhost:17081',
       '/artwork': 'http://localhost:17081',
       '/wave-preview': 'http://localhost:17081',
-      '/wave-detail': 'http://localhost:17081',
-      // Proxy metrics API requests to the Express server
-      '/api/metrics': 'http://localhost:3000'
+      '/wave-detail': 'http://localhost:17081'
     },
   },
   resolve: {

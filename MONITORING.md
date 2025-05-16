@@ -52,17 +52,55 @@ cp prometheus.yml /home/adam/grafana/prometheus/
 4. Select the Prometheus data source
 5. Click Import
 
-### 4. Start the Application with Monitoring
+### 4. Start the Application
 
-To start the application with monitoring enabled:
+#### Development Mode
+
+For development with metrics monitoring:
 
 ```bash
-npm run start
+npm run dev:all
 ```
 
 This will start:
-- The main application server on port 3000
+- The Vite dev server on port 5173 (for the React application)
+- The metrics server on port 3000 (for API endpoints)
+- The Prometheus metrics endpoint on port 9090
+
+In development mode, the React application communicates with the metrics server using CORS requests to `http://localhost:3000/api/metrics/*`.
+
+#### Production Mode
+
+For production with metrics monitoring:
+
+```bash
+npm run build
+npm run start
+```
+
+This will build the React app and start:
+- The main application server on port 3000 (serves the built React app)
 - The metrics endpoint on port 9090
+
+## Architecture
+
+The monitoring system is designed with a clear separation of concerns:
+
+1. **Metrics Server** (server.js)
+   - Runs on port 3000
+   - Collects application metrics
+   - Provides API endpoints for the React app to report metrics
+   - Proxies API requests to the Clojure backend server
+
+2. **Metrics Endpoint** (metrics-server.js)
+   - Runs on port 9090
+   - Exposes Prometheus-formatted metrics
+   - Collects system performance metrics
+
+3. **React Application**
+   - Uses the `useMetrics` hook to report metrics
+   - In development: Communicates with the metrics server via CORS
+   - In production: Uses the same origin for metrics API calls
 
 ## Accessing Metrics and Dashboards
 
@@ -95,10 +133,11 @@ This will start:
 
 If metrics are not showing up in Grafana:
 
-1. Check that the application is running with `npm run start`
+1. Check that the application is running with the appropriate command
 2. Verify that metrics are available at http://localhost:9090/metrics
 3. Ensure Prometheus is scraping the metrics endpoint (check Prometheus targets)
 4. Check that Grafana can connect to your Prometheus data source
+5. In development mode, check browser console for CORS errors
 
 ## Performance Optimization
 
