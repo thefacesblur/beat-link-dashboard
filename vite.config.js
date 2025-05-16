@@ -5,7 +5,7 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: '../resources/beat_link_trigger/public',
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
@@ -19,6 +19,8 @@ export default defineConfig({
       '/artwork': 'http://localhost:17081',
       '/wave-preview': 'http://localhost:17081',
       '/wave-detail': 'http://localhost:17081',
+      // Proxy metrics API requests to the Express server
+      '/api/metrics': 'http://localhost:3000'
     },
   },
   resolve: {
