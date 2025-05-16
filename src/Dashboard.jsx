@@ -110,125 +110,84 @@ export default function Dashboard({ params }) {
     }
   }
 
-  // Fetch history on component mount
+  // Fetch history once on component mount
   useEffect(() => {
+    console.log("Fetching track history...");
+    fetchHistory();
+  }, []);
+
+  // Function to fetch history from server
+  const fetchHistory = () => {
     fetch('/api/track-history')
       .then(res => res.json())
       .then(data => {
-        // Apply deduplication to the server data just to be safe
-        setHistory(dedupeHistory(data));
+        console.log(`Fetched ${data.length} history entries`);
+        setHistory(data);
       })
       .catch(err => {
-        console.error("Failed to fetch track history:", err);
+        console.error("Failed to fetch history:", err);
+        setError(new Error("Failed to fetch track history"));
       });
-  }, []);
+  };
 
-  // Modified "clean history" effect that runs on component mount
-  useEffect(() => {
-    console.log("Component mounted, cleaning and fetching history");
-    
-    // First, explicitly clean the history on the server
-    fetch('/api/track-history/clean', { 
-      method: 'PATCH' 
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to clean track history');
-      return res.json();
-    })
-    .then(data => {
-      console.log("History cleaned:", data);
-      
-      // Now fetch the cleaned history
-      return fetch('/api/track-history');
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to fetch track history');
-      return res.json();
-    })
-    .then(data => {
-      console.log(`Fetched ${data.length} history entries`);
-      setHistory(data);
-    })
-    .catch(err => {
-      console.error("History operation failed:", err);
-      // Try a simple fetch as fallback
-      fetch('/api/track-history')
-        .then(res => res.json())
-        .then(data => setHistory(data));
-    });
-  }, []);  // Empty dependency array means this runs once on mount
-
-  // Move the useRef hook to the component level (not inside an effect)
-  const lastProcessedTracks = useRef(new Map());
-
-  // Modified track detection to be more reliable
+  // Track changes detector
   useEffect(() => {
     if (!players || players.length === 0) return;
+    
+    let shouldRefresh = false;
     
     players.forEach(player => {
       if (!player.track?.id) return;
       
-      const { number, track } = player;
-      const trackId = track.id;
+      const { number } = player;
+      const trackId = player.track.id;
       
-      // Skip if we've already processed this exact track for this player
-      if (lastProcessedTracks.current.get(number) === trackId) {
+      // Skip if this is the same track we already processed
+      if (lastTrackIds.current[number] === trackId) {
         return;
       }
       
-      // Update our reference of processed tracks
-      lastProcessedTracks.current.set(number, trackId);
-      
-      // Check if this track is already in our history
-      const trackExists = history.some(
-        entry => entry.player === number && entry.trackId === trackId
+      // Check if this track already exists in our history
+      const trackExists = history.some(entry => 
+        entry.player === number && entry.trackId === trackId
       );
       
-      // Skip adding if it already exists
-      if (trackExists) {
-        console.log(`Skipping duplicate track: ${track.artist} - ${track.title} on deck ${number}`);
-        return;
+      if (!trackExists) {
+        // New track detected!
+        const newTrack = {
+          timestamp: Date.now(),
+          player: number,
+          artist: player.track.artist || 'Unknown',
+          title: player.track.title || 'Unknown',
+          bpm: player.track.bpm || player['track-bpm'] || 0,
+          duration: player.track.duration || 0,
+          trackId,
+          genre: player.track.genre || 'Unknown',
+          key: player.track.key || 'Unknown',
+        };
+        
+        // Send to server
+        fetch('/api/track-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTrack)
+        })
+        .then(() => {
+          shouldRefresh = true;
+        })
+        .catch(err => {
+          console.error("Failed to save track:", err);
+        });
+        
+        // Update our reference of what we've seen
+        lastTrackIds.current[number] = trackId;
       }
-      
-      console.log(`New track detected: ${track.artist} - ${track.title} on deck ${number}`);
-      
-      const newTrack = {
-        timestamp: Date.now(),
-        player: number,
-        artist: track.artist || 'Unknown Artist',
-        title: track.title || 'Unknown Title',
-        bpm: track.bpm || player['track-bpm'] || 0,
-        duration: track.duration || 0,
-        trackId,
-        genre: track.genre || 'Unknown',
-        key: track.key || 'Unknown',
-      };
-      
-      // Send to server
-      fetch('/api/track-history', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTrack)
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.added) {
-          console.log(`Track added to history: ${newTrack.artist} - ${newTrack.title}`);
-          
-          // Refresh our history from server to stay in sync
-          fetch('/api/track-history')
-            .then(res => res.json())
-            .then(serverHistory => {
-              setHistory(serverHistory);
-            });
-        } else {
-          console.log(`Server rejected track as duplicate: ${newTrack.artist} - ${newTrack.title}`);
-        }
-      })
-      .catch(err => {
-        console.error("Failed to add track to history:", err);
-      });
     });
+    
+    // If we added any tracks, refresh the history from server
+    if (shouldRefresh) {
+      setTimeout(fetchHistory, 500); // Short delay to ensure server processed our request
+    }
   }, [players, history]);
 
   // Handle API errors
@@ -268,36 +227,24 @@ export default function Dashboard({ params }) {
     }
   });
 
-  // Update Reset button handler
-  const handleReset = () => {
+  // Clean duplicates function
+  const handleCleanDuplicates = () => {
+    fetch('/api/track-history/clean', { method: 'PATCH' })
+      .then(() => fetchHistory())
+      .catch(err => console.error("Failed to clean duplicates:", err));
+  };
+
+  // Reset history function
+  const handleResetHistory = () => {
     if (window.confirm('Are you sure you want to reset the session?')) {
       fetch('/api/track-history', { method: 'DELETE' })
-        .then(res => res.json())
         .then(() => {
           setHistory([]);
         })
         .catch(err => {
-          console.error("Failed to reset track history:", err);
+          console.error("Failed to reset history:", err);
         });
     }
-  };
-
-  // Clean button handler (for debugging)
-  const handleCleanDuplicates = () => {
-    fetch('/api/track-history/clean', { method: 'PATCH' })
-      .then(res => res.json())
-      .then(data => {
-        console.log("Clean response:", data);
-        return fetch('/api/track-history');
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log(`Fetched ${data.length} cleaned entries`);
-        setHistory(data);
-      })
-      .catch(err => {
-        console.error("Failed to clean duplicates:", err);
-      });
   };
 
   return (
@@ -354,19 +301,13 @@ export default function Dashboard({ params }) {
         <Button onClick={() => exportHistory(history, 'csv')}>Export CSV</Button>
         <Button onClick={() => exportHistory(history, 'json')}>Export JSON</Button>
         <Button onClick={() => exportHistory(history, 'txt')}>Export TXT</Button>
+        <Button onClick={handleCleanDuplicates} color="secondary">Clean Duplicates</Button>
         <Button
           variant="contained"
           color="primary"
-          onClick={handleReset}
+          onClick={handleResetHistory}
         >
           Restart History Session
-        </Button>
-        <Button 
-          variant="outlined" 
-          onClick={handleCleanDuplicates}
-          sx={{ mb: 2, mt: 2, mr: 1 }}
-        >
-          Clean Duplicates
         </Button>
       </ButtonGroup>
     </Box>
