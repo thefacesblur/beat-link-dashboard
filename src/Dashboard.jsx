@@ -130,7 +130,7 @@ export default function Dashboard({ params }) {
         
       }
     });
-  }, [players, reportTrackChange]);
+  }, [players]);
 
   // Handle API errors
   useEffect(() => {
