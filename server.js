@@ -24,15 +24,15 @@ app.use('/params.json', proxy('http://localhost:17081', {
 }));
 
 app.use('/artwork', proxy('http://localhost:17081', {
-  proxyReqPathResolver: (req) => `/artwork${req.url}`
+  proxyReqPathResolver: (req) => `/artwork`
 }));
 
 app.use('/wave-preview', proxy('http://localhost:17081', {
-  proxyReqPathResolver: (req) => `/wave-preview${req.url}`
+  proxyReqPathResolver: (req) => `/wave-preview`
 }));
 
 app.use('/wave-detail', proxy('http://localhost:17081', {
-  proxyReqPathResolver: (req) => `/wave-detail${req.url}`
+  proxyReqPathResolver: (req) => `/wave-detail`
 }));
 
 // API endpoints for metrics collection
