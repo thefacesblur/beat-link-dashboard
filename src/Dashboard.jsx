@@ -158,12 +158,12 @@ export default function Dashboard({ params }) {
     });
   }, []);  // Empty dependency array means this runs once on mount
 
+  // Move the useRef hook to the component level (not inside an effect)
+  const lastProcessedTracks = useRef(new Map());
+
   // Modified track detection to be more reliable
   useEffect(() => {
     if (!players || players.length === 0) return;
-    
-    // Map of player number to last processed track ID 
-    const lastProcessedTracks = useRef(new Map());
     
     players.forEach(player => {
       if (!player.track?.id) return;
