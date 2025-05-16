@@ -5,6 +5,17 @@ import { resolve } from 'path';
 // Server-side, shared track history for all users
 let trackHistory = [];
 
+// Server-side deduplication function
+function isDuplicate(newTrack) {
+  // Don't add if we already have this exact track from this player
+  return trackHistory.some(entry => 
+    entry.player === newTrack.player && 
+    entry.trackId === newTrack.trackId &&
+    // If the timestamps are very close (within 5 seconds), consider it a duplicate
+    Math.abs(entry.timestamp - newTrack.timestamp) < 5000
+  );
+}
+
 export default defineConfig({
   plugins: [react()],
   build: {
@@ -41,9 +52,16 @@ export default defineConfig({
             try {
               const track = JSON.parse(body);
               if (track) {
-                trackHistory.push(track);
-                res.writeHead(201, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
+                // Check for duplicates before adding
+                if (!isDuplicate(track)) {
+                  trackHistory.push(track);
+                  res.writeHead(201, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: true, added: true }));
+                } else {
+                  // We found a duplicate, don't add it
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: true, added: false, reason: 'duplicate' }));
+                }
               } else {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid track data' }));

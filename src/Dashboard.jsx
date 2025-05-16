@@ -21,16 +21,32 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 function dedupeHistory(history) {
-  const seen = {};
-  return history.filter(entry => {
-    if (!seen[entry.player]) seen[entry.player] = new Set();
-    if (seen[entry.player].has(entry.trackId)) {
-      return false;
-    } else {
-      seen[entry.player].add(entry.trackId);
-      return true;
+  // Map to store the most recent entry for each player+trackId combination
+  const seen = new Map();
+  
+  // Process latest entries first to keep most recent ones
+  [...history].reverse().forEach(entry => {
+    const key = `${entry.player}-${entry.trackId}`;
+    if (!seen.has(key)) {
+      seen.set(key, entry);
     }
   });
+  
+  // Convert back to array and sort by timestamp
+  return Array.from(seen.values())
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
+// Use this as a utility function to check duplicates
+function isDuplicateTrack(history, newTrack) {
+  // Check if this track was already played on this deck
+  const lastEntry = [...history].reverse().find(e => e.player === newTrack.player);
+  if (lastEntry && lastEntry.trackId === newTrack.trackId) {
+    // If it's the same track on the same deck, check if it's too soon for a genuine replay
+    // (5 seconds threshold to avoid double-detection)
+    return Math.abs(lastEntry.timestamp - newTrack.timestamp) < 5000;
+  }
+  return false;
 }
 
 const TIMELINE_ID = 'dj-set-timeline';
@@ -99,39 +115,42 @@ export default function Dashboard({ params }) {
     fetch('/api/track-history')
       .then(res => res.json())
       .then(data => {
-        setHistory(data);
+        // Apply deduplication to the server data just to be safe
+        setHistory(dedupeHistory(data));
       })
       .catch(err => {
         console.error("Failed to fetch track history:", err);
       });
   }, []);
 
-  // Replace the track change detection logic to save to server:
+  // Update your useEffect for detecting track changes:
   useEffect(() => {
     let now = Date.now();
     players.forEach(player => {
       const trackId = player.track?.id;
       if (!trackId) return;
-      const lastEntry = [...history].reverse().find(e => e.player === player.number);
-      if (!lastEntry || lastEntry.trackId !== trackId) {
+      
+      // Create the new track entry
+      const newTrack = {
+        timestamp: now,
+        player: player.number,
+        artist: player.track.artist,
+        title: player.track.title,
+        bpm: player.track.bpm || player['track-bpm'],
+        duration: player.track.duration,
+        trackId,
+        genre: player.track.genre || 'Unknown',
+        key: player.track.key || 'Unknown',
+      };
+      
+      // Client-side duplicate check
+      if (!isDuplicateTrack(history, newTrack)) {
+        // Ensure unique timestamps if adding multiple tracks at once
         if (history.length && history[history.length - 1].timestamp === now) {
-          now += 1;
+          newTrack.timestamp += 1;
         }
         
-        // Create new track entry
-        const newTrack = {
-          timestamp: now,
-          player: player.number,
-          artist: player.track.artist,
-          title: player.track.title,
-          bpm: player.track.bpm || player['track-bpm'],
-          duration: player.track.duration,
-          trackId,
-          genre: player.track.genre || 'Unknown',
-          key: player.track.key || 'Unknown',
-        };
-        
-        // Update local state
+        // Optimistically update local state
         setHistory(prev => [...prev, newTrack]);
         
         // Save to server
@@ -141,14 +160,27 @@ export default function Dashboard({ params }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(newTrack)
-        }).catch(err => {
+        })
+        .then(res => res.json())
+        .then(data => {
+          // If server detected a duplicate that we missed, sync with server data
+          if (!data.added) {
+            // Refresh from server to ensure we're in sync
+            fetch('/api/track-history')
+              .then(res => res.json())
+              .then(serverHistory => {
+                setHistory(serverHistory);
+              });
+          }
+        })
+        .catch(err => {
           console.error("Failed to save track to history:", err);
         });
         
         lastTrackIds.current[player.number] = trackId;
       }
     });
-  }, [players]);
+  }, [players, history]);
 
   // Handle API errors
   useEffect(() => {
@@ -288,25 +320,27 @@ function SortableSection({ id, children, gridColumn }) {
 function exportHistory(history, format) {
   if (!history.length) return;
 
+  // Ensure we're exporting deduplicated history
+  const dedupedHistory = dedupeHistory(history);
+  
   let content = '';
   const dateStamp = new Date().toISOString().split('T')[0];
   let filename = `track_history_${dateStamp}.${format}`;
 
   if (format === 'json') {
-    content = JSON.stringify(history, null, 2);
+    content = JSON.stringify(dedupedHistory, null, 2);
   } else if (format === 'csv') {
-    const header = Object.keys(history[0]).join(',');
-    const rows = history.map(entry =>
+    const header = Object.keys(dedupedHistory[0]).join(',');
+    const rows = dedupedHistory.map(entry =>
       Object.values(entry).map(val =>
         typeof val === 'string' && val.includes(',') ? `"${val}"` : val
       ).join(',')
     );
     content = [header, ...rows].join('\n');
   } else if (format === 'txt') {
-    content = history.map(entry =>
+    content = dedupedHistory.map(entry =>
       `${new Date(entry.timestamp).toLocaleString()} | Deck ${entry.player} | ${entry.artist} - ${entry.title} | BPM: ${entry.bpm}`
     ).join('\n');
-    filename = `track_history_${dateStamp}.txt`;
   }
 
   const blob = new Blob([content], { type: 'text/plain' });
