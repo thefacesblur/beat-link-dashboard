@@ -110,13 +110,13 @@ export default function Dashboard({ params }) {
     }
   }
 
-  // Fetch history once on component mount
+  // Fetch history from server on component mount
   useEffect(() => {
-    console.log("Fetching track history...");
+    console.log("Fetching track history on mount");
     fetchHistory();
   }, []);
 
-  // Function to fetch history from server
+  // Function to fetch the latest history from server
   const fetchHistory = () => {
     fetch('/api/track-history')
       .then(res => res.json())
@@ -130,33 +130,31 @@ export default function Dashboard({ params }) {
       });
   };
 
-  // Track changes detector
+  // Detect track changes
   useEffect(() => {
     if (!players || players.length === 0) return;
     
-    let shouldRefresh = false;
+    let hasNewTracks = false;
     
     players.forEach(player => {
-      if (!player.track?.id) return;
-      
-      const { number } = player;
-      const trackId = player.track.id;
+      const trackId = player.track?.id;
+      if (!trackId) return;
       
       // Skip if this is the same track we already processed
-      if (lastTrackIds.current[number] === trackId) {
+      if (lastTrackIds.current[player.number] === trackId) {
         return;
       }
       
-      // Check if this track already exists in our history
+      // Check if this track is already in history
       const trackExists = history.some(entry => 
-        entry.player === number && entry.trackId === trackId
+        entry.player === player.number && entry.trackId === trackId
       );
       
       if (!trackExists) {
-        // New track detected!
+        // New track detected
         const newTrack = {
           timestamp: Date.now(),
-          player: number,
+          player: player.number,
           artist: player.track.artist || 'Unknown',
           title: player.track.title || 'Unknown',
           bpm: player.track.bpm || player['track-bpm'] || 0,
@@ -173,20 +171,19 @@ export default function Dashboard({ params }) {
           body: JSON.stringify(newTrack)
         })
         .then(() => {
-          shouldRefresh = true;
+          hasNewTracks = true;
+          // Update our tracking ref
+          lastTrackIds.current[player.number] = trackId;
         })
         .catch(err => {
           console.error("Failed to save track:", err);
         });
-        
-        // Update our reference of what we've seen
-        lastTrackIds.current[number] = trackId;
       }
     });
     
-    // If we added any tracks, refresh the history from server
-    if (shouldRefresh) {
-      setTimeout(fetchHistory, 500); // Short delay to ensure server processed our request
+    // If we added any tracks, refresh history from server
+    if (hasNewTracks) {
+      setTimeout(fetchHistory, 500);
     }
   }, [players, history]);
 
@@ -201,6 +198,26 @@ export default function Dashboard({ params }) {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Clean duplicates function
+  const handleCleanDuplicates = () => {
+    fetch('/api/track-history/clean', { method: 'PATCH' })
+      .then(() => fetchHistory())
+      .catch(err => console.error("Failed to clean duplicates:", err));
+  };
+
+  // Reset history function
+  const handleResetHistory = () => {
+    if (window.confirm('Are you sure you want to reset the session?')) {
+      fetch('/api/track-history', { method: 'DELETE' })
+        .then(() => {
+          setHistory([]);
+        })
+        .catch(err => {
+          console.error("Failed to reset history:", err);
+        });
+    }
+  };
 
   // Render dashboard sections in the current order
   const dashboardSections = dashboardOrder.map(id => {
@@ -226,26 +243,6 @@ export default function Dashboard({ params }) {
       );
     }
   });
-
-  // Clean duplicates function
-  const handleCleanDuplicates = () => {
-    fetch('/api/track-history/clean', { method: 'PATCH' })
-      .then(() => fetchHistory())
-      .catch(err => console.error("Failed to clean duplicates:", err));
-  };
-
-  // Reset history function
-  const handleResetHistory = () => {
-    if (window.confirm('Are you sure you want to reset the session?')) {
-      fetch('/api/track-history', { method: 'DELETE' })
-        .then(() => {
-          setHistory([]);
-        })
-        .catch(err => {
-          console.error("Failed to reset history:", err);
-        });
-    }
-  };
 
   return (
     <Box px={{ xs: 1, sm: 2, md: 4 }} py={2}>
@@ -301,11 +298,18 @@ export default function Dashboard({ params }) {
         <Button onClick={() => exportHistory(history, 'csv')}>Export CSV</Button>
         <Button onClick={() => exportHistory(history, 'json')}>Export JSON</Button>
         <Button onClick={() => exportHistory(history, 'txt')}>Export TXT</Button>
-        <Button onClick={handleCleanDuplicates} color="secondary">Clean Duplicates</Button>
+        <Button 
+          variant="outlined" 
+          onClick={handleCleanDuplicates}
+          sx={{ ml: 1 }}
+        >
+          Clean Duplicates
+        </Button>
         <Button
           variant="contained"
           color="primary"
           onClick={handleResetHistory}
+          sx={{ ml: 1 }}
         >
           Restart History Session
         </Button>
@@ -334,27 +338,25 @@ function SortableSection({ id, children, gridColumn }) {
 function exportHistory(history, format) {
   if (!history.length) return;
 
-  // Ensure we're exporting deduplicated history
-  const dedupedHistory = dedupeHistory(history);
-  
   let content = '';
   const dateStamp = new Date().toISOString().split('T')[0];
   let filename = `track_history_${dateStamp}.${format}`;
 
   if (format === 'json') {
-    content = JSON.stringify(dedupedHistory, null, 2);
+    content = JSON.stringify(history, null, 2);
   } else if (format === 'csv') {
-    const header = Object.keys(dedupedHistory[0]).join(',');
-    const rows = dedupedHistory.map(entry =>
+    const header = Object.keys(history[0]).join(',');
+    const rows = history.map(entry =>
       Object.values(entry).map(val =>
         typeof val === 'string' && val.includes(',') ? `"${val}"` : val
       ).join(',')
     );
     content = [header, ...rows].join('\n');
   } else if (format === 'txt') {
-    content = dedupedHistory.map(entry =>
+    content = history.map(entry =>
       `${new Date(entry.timestamp).toLocaleString()} | Deck ${entry.player} | ${entry.artist} - ${entry.title} | BPM: ${entry.bpm}`
     ).join('\n');
+    filename = `track_history_${dateStamp}.txt`;
   }
 
   const blob = new Blob([content], { type: 'text/plain' });
