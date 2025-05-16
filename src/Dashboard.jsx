@@ -21,19 +21,19 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 function dedupeHistory(history) {
-  // Map to store the most recent entry for each player+trackId combination
-  const seen = new Map();
+  // Track the first occurrence of each player+trackId combination
+  const uniqueTracks = new Map();
   
-  // Process latest entries first to keep most recent ones
-  [...history].reverse().forEach(entry => {
+  // Process entries in chronological order (keep first occurrence)
+  history.forEach(entry => {
     const key = `${entry.player}-${entry.trackId}`;
-    if (!seen.has(key)) {
-      seen.set(key, entry);
+    if (!uniqueTracks.has(key)) {
+      uniqueTracks.set(key, entry);
     }
   });
   
-  // Convert back to array and sort by timestamp
-  return Array.from(seen.values())
+  // Return deduplicated array sorted by timestamp
+  return Array.from(uniqueTracks.values())
     .sort((a, b) => a.timestamp - b.timestamp);
 }
 
@@ -125,14 +125,35 @@ export default function Dashboard({ params }) {
 
   // Update your useEffect for detecting track changes:
   useEffect(() => {
-    let now = Date.now();
+    // Guard against empty player data
+    if (!players || players.length === 0) return;
+    
+    // Create a Set of tracks we've already sent to avoid duplicates
+    const processedTracks = new Set();
+    
+    // Process each player
     players.forEach(player => {
       const trackId = player.track?.id;
       if (!trackId) return;
       
-      // Create the new track entry
+      // Create a unique ID for this player+track combination
+      const uniqueTrackKey = `${player.number}-${trackId}`;
+      
+      // Skip if we've already processed this track in this component lifecycle
+      if (processedTracks.has(uniqueTrackKey)) return;
+      processedTracks.add(uniqueTrackKey);
+      
+      // Check if this track already exists in our local history
+      const trackExists = history.some(
+        entry => entry.player === player.number && entry.trackId === trackId
+      );
+      
+      // Skip if track already exists in history
+      if (trackExists) return;
+      
+      // New track detected, create entry
       const newTrack = {
-        timestamp: now,
+        timestamp: Date.now(),
         player: player.number,
         artist: player.track.artist,
         title: player.track.title,
@@ -143,44 +164,51 @@ export default function Dashboard({ params }) {
         key: player.track.key || 'Unknown',
       };
       
-      // Client-side duplicate check
-      if (!isDuplicateTrack(history, newTrack)) {
-        // Ensure unique timestamps if adding multiple tracks at once
-        if (history.length && history[history.length - 1].timestamp === now) {
-          newTrack.timestamp += 1;
-        }
-        
-        // Optimistically update local state
-        setHistory(prev => [...prev, newTrack]);
-        
-        // Save to server
-        fetch('/api/track-history', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newTrack)
-        })
-        .then(res => res.json())
-        .then(data => {
-          // If server detected a duplicate that we missed, sync with server data
-          if (!data.added) {
-            // Refresh from server to ensure we're in sync
-            fetch('/api/track-history')
-              .then(res => res.json())
-              .then(serverHistory => {
-                setHistory(serverHistory);
-              });
-          }
-        })
-        .catch(err => {
-          console.error("Failed to save track to history:", err);
-        });
-        
-        lastTrackIds.current[player.number] = trackId;
-      }
+      // Update local state optimistically (will be overwritten on fetch)
+      setHistory(prev => [...prev, newTrack]);
+      
+      // Send to server
+      fetch('/api/track-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTrack)
+      })
+      .then(res => res.json())
+      .then(data => {
+        // Always refresh from server to ensure consistency
+        fetch('/api/track-history')
+          .then(res => res.json())
+          .then(serverHistory => {
+            setHistory(serverHistory);
+          });
+      })
+      .catch(err => {
+        console.error("Failed to save track:", err);
+      });
     });
-  }, [players, history]);
+  }, [players]);
+
+  // Add an effect to clean history on load
+  useEffect(() => {
+    // Clean up any existing duplicates on component mount
+    fetch('/api/track-history', { method: 'PATCH', url: '/clean' })
+      .then(res => res.json())
+      .then(() => {
+        // Get the cleaned history
+        return fetch('/api/track-history');
+      })
+      .then(res => res.json())
+      .then(data => {
+        setHistory(data);
+      })
+      .catch(err => {
+        console.error("Failed to fetch track history:", err);
+        // Fall back to just fetching current history
+        fetch('/api/track-history')
+          .then(res => res.json())
+          .then(data => setHistory(data));
+      });
+  }, []);
 
   // Handle API errors
   useEffect(() => {
@@ -218,6 +246,34 @@ export default function Dashboard({ params }) {
       );
     }
   });
+
+  // Update Reset button handler
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to reset the session?')) {
+      fetch('/api/track-history', { method: 'DELETE' })
+        .then(res => res.json())
+        .then(() => {
+          setHistory([]);
+        })
+        .catch(err => {
+          console.error("Failed to reset track history:", err);
+        });
+    }
+  };
+
+  // Add this function to manually clean history if needed
+  const cleanHistoryNow = () => {
+    fetch('/api/track-history', { method: 'PATCH', url: '/clean' })
+      .then(res => res.json())
+      .then(() => {
+        // Get the cleaned history
+        return fetch('/api/track-history');
+      })
+      .then(res => res.json())
+      .then(data => {
+        setHistory(data);
+      });
+  };
 
   return (
     <Box px={{ xs: 1, sm: 2, md: 4 }} py={2}>
@@ -276,25 +332,11 @@ export default function Dashboard({ params }) {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => {
-            if (window.confirm('Are you sure you want to reset the session?')) {
-              // Clear history on server
-              fetch('/api/track-history', {
-                method: 'DELETE'
-              })
-                .then(res => res.json())
-                .then(() => {
-                  // Update local state
-                  setHistory([]);
-                })
-                .catch(err => {
-                  console.error("Failed to reset track history:", err);
-                });
-            }
-          }}
+          onClick={handleReset}
         >
           Restart History Session
         </Button>
+        <Button onClick={cleanHistoryNow}>Clean Duplicates</Button>
       </ButtonGroup>
     </Box>
   );

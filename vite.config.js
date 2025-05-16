@@ -5,15 +5,32 @@ import { resolve } from 'path';
 // Server-side, shared track history for all users
 let trackHistory = [];
 
-// Server-side deduplication function
+// Much stricter duplicate check
 function isDuplicate(newTrack) {
-  // Don't add if we already have this exact track from this player
+  // Look for any matching trackId+player combination - regardless of timestamp
   return trackHistory.some(entry => 
     entry.player === newTrack.player && 
-    entry.trackId === newTrack.trackId &&
-    // If the timestamps are very close (within 5 seconds), consider it a duplicate
-    Math.abs(entry.timestamp - newTrack.timestamp) < 5000
+    entry.trackId === newTrack.trackId
   );
+}
+
+// Clean existing history to remove all duplicates
+function cleanHistory() {
+  const uniqueTracks = new Map();
+  
+  // Process entries in chronological order (keep first occurrence)
+  trackHistory.forEach(entry => {
+    const key = `${entry.player}-${entry.trackId}`;
+    if (!uniqueTracks.has(key)) {
+      uniqueTracks.set(key, entry);
+    }
+  });
+  
+  // Replace history with deduplicated version
+  trackHistory = Array.from(uniqueTracks.values())
+    .sort((a, b) => a.timestamp - b.timestamp);
+  
+  return trackHistory;
 }
 
 export default defineConfig({
@@ -41,8 +58,10 @@ export default defineConfig({
       // GET /api/track-history - Get all track history
       server.middlewares.use('/api/track-history', (req, res, next) => {
         if (req.method === 'GET') {
+          // Clean history before sending
+          const cleanedHistory = cleanHistory();
           res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(trackHistory));
+          res.end(JSON.stringify(cleanedHistory));
         } 
         // POST /api/track-history - Add a track to history
         else if (req.method === 'POST') {
@@ -58,7 +77,7 @@ export default defineConfig({
                   res.writeHead(201, { 'Content-Type': 'application/json' });
                   res.end(JSON.stringify({ success: true, added: true }));
                 } else {
-                  // We found a duplicate, don't add it
+                  // Duplicate found, don't add
                   res.writeHead(200, { 'Content-Type': 'application/json' });
                   res.end(JSON.stringify({ success: true, added: false, reason: 'duplicate' }));
                 }
@@ -71,6 +90,12 @@ export default defineConfig({
               res.end(JSON.stringify({ error: 'Invalid JSON' }));
             }
           });
+        }
+        // Add a PATCH endpoint to clean the history
+        else if (req.method === 'PATCH' && req.url.includes('clean')) {
+          cleanHistory();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, historySize: trackHistory.length }));
         }
         // DELETE /api/track-history - Clear track history
         else if (req.method === 'DELETE') {
