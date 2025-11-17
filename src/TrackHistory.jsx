@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography, Box, Tabs, Tab } from '@mui/material';
-import TrackAnalytics from './TrackAnalytics';
+import AdvancedAnalytics from './AdvancedAnalytics';
 import { useSettings } from './SettingsContext';
 
 export default function TrackHistory({ history }) {
@@ -44,7 +44,7 @@ export default function TrackHistory({ history }) {
           </Table>
         </Box>
       )}
-      {tab === 1 && analyticsEnabled && <TrackAnalytics history={history} />}
+      {tab === 1 && analyticsEnabled && <AdvancedAnalytics history={history} />}
     </Paper>
   );
 }

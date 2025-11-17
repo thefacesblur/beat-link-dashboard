@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PlayerCard from './PlayerCard';
-import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery } from '@mui/material';
+import { Typography, Box, Button, ButtonGroup, useTheme, useMediaQuery, IconButton } from '@mui/material';
+import FolderIcon from '@mui/icons-material/Folder';
 import TrackHistory from './TrackHistory';
 import SetTimeline from './SetTimeline';
+import SessionManager from './SessionManager';
+import useSessionManager from './useSessionManager';
 import {
   DndContext,
   closestCenter,
@@ -36,14 +39,27 @@ const TIMELINE_ID = 'dj-set-timeline';
 const HISTORY_ID = 'track-history';
 
 export default function Dashboard({ params }) {
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('trackHistory');
-    if (!saved) return [];
-    const arr = JSON.parse(saved);
-    return dedupeHistory(arr);
-  });
+  // Session management
+  const {
+    sessions,
+    currentSessionId,
+    currentTracks,
+    createSession,
+    deleteSession,
+    renameSession,
+    updateSessionTracks,
+    switchSession
+  } = useSessionManager();
+
+  const [sessionManagerOpen, setSessionManagerOpen] = useState(false);
+  const [history, setHistory] = useState(currentTracks);
   const lastTrackIds = useRef({});
   const [activeId, setActiveId] = useState(null);
+
+  // Sync history with current session tracks
+  useEffect(() => {
+    setHistory(currentTracks);
+  }, [currentSessionId, currentTracks]);
 
   const players = params.players
     ? Object.values(params.players).filter(p => p.number === 1 || p.number === 2)
@@ -127,10 +143,12 @@ export default function Dashboard({ params }) {
     // eslint-disable-next-line
   }, [players]);
 
-  // Persist history in localStorage
+  // Persist history to current session
   useEffect(() => {
-    localStorage.setItem('trackHistory', JSON.stringify(history));
-  }, [history]);
+    if (currentSessionId && history.length > 0) {
+      updateSessionTracks(currentSessionId, history);
+    }
+  }, [history, currentSessionId, updateSessionTracks]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -204,24 +222,49 @@ export default function Dashboard({ params }) {
             : null}
         </DragOverlay>
       </DndContext>
-      <ButtonGroup sx={{ mb: 2, mt: 2, float: 'right', width: '100%', justifyContent: 'flex-end' }}>
-        <Button onClick={() => exportHistory(history, 'csv')}>Export CSV</Button>
-        <Button onClick={() => exportHistory(history, 'json')}>Export JSON</Button>
-        <Button onClick={() => exportHistory(history, 'txt')}>Export TXT</Button>
+      <Box sx={{ mb: 2, mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Button
-        variant="contained"
-        color="primary"
-        onClick={() => {
-          if (window.confirm('Are you sure you want to reset the session?')) {
-            setHistory([]);
-            localStorage.removeItem('trackHistory');
-          }
+          variant="outlined"
+          startIcon={<FolderIcon />}
+          onClick={() => setSessionManagerOpen(true)}
+        >
+          Sessions ({sessions.length})
+        </Button>
+        <ButtonGroup>
+          <Button onClick={() => exportHistory(history, 'csv')}>Export CSV</Button>
+          <Button onClick={() => exportHistory(history, 'json')}>Export JSON</Button>
+          <Button onClick={() => exportHistory(history, 'txt')}>Export TXT</Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              if (window.confirm('Clear current session history?')) {
+                setHistory([]);
+                if (currentSessionId) {
+                  updateSessionTracks(currentSessionId, []);
+                }
+              }
+            }}
+          >
+            Clear Session
+          </Button>
+        </ButtonGroup>
+      </Box>
+
+      <SessionManager
+        open={sessionManagerOpen}
+        onClose={() => setSessionManagerOpen(false)}
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSessionSelect={switchSession}
+        onSessionCreate={createSession}
+        onSessionDelete={deleteSession}
+        onSessionRename={renameSession}
+        onCompare={() => {
+          // TODO: Implement comparison view
+          alert('Session comparison coming soon!');
         }}
-      >
-        Restart History Session
-      </Button>
-      </ButtonGroup>
-      
+      />
     </Box>
   );
 }
