@@ -1,0 +1,40 @@
+# Frontend-only Dockerfile
+# Use this when running the backend on the host machine
+
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source files
+COPY . .
+
+# Build the frontend
+RUN npm run build
+
+# Runtime stage - only Node.js needed
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy built frontend from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy Node.js server files
+COPY server.js ./
+COPY package*.json ./
+
+# Install only production dependencies for Node.js server
+RUN npm ci --only=production
+
+# Expose the frontend port
+EXPOSE 8080
+
+# Start the frontend server
+CMD ["node", "server.js"]
+

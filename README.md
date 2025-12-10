@@ -170,6 +170,105 @@ Default server URL: `http://localhost:17081`
 
 During development, Vite automatically proxies API requests to the Beat Link Trigger backend. See `vite.config.js` for configuration.
 
+## Docker Deployment
+
+The application can be deployed as a single Docker container that includes both the frontend and backend services.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- The `beat-link-api-standalone.jar` file must be present in `api-server/` directory
+
+### Quick Start with Docker
+
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Or run in detached mode
+docker-compose up -d --build
+```
+
+The dashboard will be available at `http://localhost:8080` (or the port specified by the `PORT` environment variable).
+
+### Building the Docker Image
+
+```bash
+# Build the image
+docker build -t beat-link-dashboard .
+
+# Run the container
+docker run -p 8080:8080 beat-link-dashboard
+```
+
+### Environment Variables
+
+The following environment variables can be configured:
+
+- `PORT` - Frontend server port (default: `8080`)
+- `BACKEND_PORT` - Backend API port (default: `17081`)
+- `BACKEND_HOST` - Backend host (default: `localhost`)
+
+### Docker Compose Configuration
+
+You can customize the deployment by modifying `docker-compose.yml` or using environment variables:
+
+```bash
+# Run with custom port
+PORT=3000 docker-compose up
+
+# Or set in .env file
+echo "PORT=3000" > .env
+docker-compose up
+```
+
+### Container Architecture
+
+The Docker container runs two services:
+1. **Clojure Backend** - Runs the Beat Link API server (port 17081 inside container)
+2. **Node.js Frontend Server** - Serves static files and proxies API requests (port 8080 by default)
+
+Both services run in the same container and communicate via localhost.
+
+### Network Configuration for Pro DJ Link
+
+**Important:** By default, Docker containers cannot access Pro DJ Link's UDP multicast network. To run the backend in Docker and detect CDJs, you need special network configuration.
+
+**Quick Start Options:**
+
+1. **WSL2 with Host Network** (Recommended for Windows):
+   ```bash
+   # First, configure WSL2 mirrored networking (one-time setup)
+   powershell -ExecutionPolicy Bypass -File setup-wsl2-networking.ps1
+   wsl --shutdown
+   wsl
+   
+   # Then run in WSL2:
+   cd /mnt/c/Users/adam/development/beat-link-dashboard
+   docker compose -f docker-compose.host-network.yml up --build
+   
+   # Or use the helper script:
+   run-wsl2-docker.bat
+   ```
+
+2. **Docker Desktop Host Network** (Alternative - requires Docker Desktop 4.34+):
+   ```bash
+   # Enable host networking in Docker Desktop Settings first
+   docker-compose -f docker-compose.host-network.yml up --build
+   ```
+
+3. **Backend on Host** (Always works):
+   ```bash
+   # Run backend on host, frontend in container
+   start-backend-host.bat  # In separate terminal
+   docker-compose -f docker-compose.frontend-only.yml up --build
+   ```
+
+For detailed network setup instructions, see:
+- **[NETWORK_SETUP.md](NETWORK_SETUP.md)** - General networking guide
+- **[WSL2_SETUP.md](WSL2_SETUP.md)** - WSL2-specific setup (recommended for Windows)
+- **[WINDOWS_NETWORKING.md](WINDOWS_NETWORKING.md)** - Windows Docker Desktop limitations
+
 ## Development
 
 ### Available Scripts
@@ -183,11 +282,14 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Start production server (after build)
+npm start
 ```
 
 ### Build Output
 
-Production builds are output to `../resources/beat_link_trigger/public` for integration with the Beat Link Trigger Java application.
+Production builds are output to `dist/` directory. The built files can be served by the Node.js production server (`npm start`) or deployed via Docker.
 
 ### Tech Stack
 

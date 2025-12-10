@@ -1,0 +1,15 @@
+services:
+  beat-link-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: beat-link-dash
+    network_mode: host
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+      - "${BACKEND_PORT:-17081}:${BACKEND_PORT:-17081}"
+    environment:
+      - PORT=${PORT:-8080}
+      - BACKEND_PORT=${BACKEND_PORT:-17081}
+      - BACKEND_HOST=localhost
+    restart: unless-stopped

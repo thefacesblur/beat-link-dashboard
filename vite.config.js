@@ -5,7 +5,7 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: '../resources/beat_link_trigger/public',
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
