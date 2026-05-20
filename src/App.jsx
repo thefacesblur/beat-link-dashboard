@@ -5,8 +5,8 @@ import { Container, Typography, Box, Alert, CircularProgress, IconButton, useThe
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsPanel from './SettingsPanel';
 
-function App() {
-  const { data, error } = useParamsData();
+function App({ apiBase = '' }) {
+  const { data, error } = useParamsData(apiBase);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const theme = useTheme();
 
@@ -26,7 +26,7 @@ function App() {
           <CircularProgress />
         </Box>
       )}
-      {data && <Dashboard params={data} />}
+      {data && <Dashboard params={data} apiBase={apiBase} />}
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Container>
   );

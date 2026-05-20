@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Box } from '@mui/material';
 
-export default function WaveformPreview({ playerNumber, player }) {
+export default function WaveformPreview({ playerNumber, player, apiBase = '' }) {
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const imgRef = useRef();
   const canvasRef = useRef();
@@ -17,7 +17,8 @@ export default function WaveformPreview({ playerNumber, player }) {
     return () => clearInterval(interval);
   }, [player]);
 
-  const src = `/wave-preview/${playerNumber}?width=400&height=80&cb=${cacheBuster}`;
+  const base = apiBase ? `${apiBase}/wave-preview/${playerNumber}` : `/wave-preview/${playerNumber}`;
+  const src = `${base}?width=400&height=80&cb=${cacheBuster}`;
 
   useEffect(() => {
     const img = imgRef.current;

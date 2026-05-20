@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 
-export default function AlbumArt({ playerNumber, player }) {
-  // Use track ID or time-played as cache buster
+export default function AlbumArt({ playerNumber, player, apiBase = '' }) {
   const trackId = player?.track?.id;
   const [cacheBuster, setCacheBuster] = useState(trackId || Date.now());
 
   useEffect(() => {
-    // If track ID changes, update cache buster
     setCacheBuster(trackId || Date.now());
   }, [trackId]);
 
-  const src = `/artwork/${playerNumber}?cb=${cacheBuster}`;
+  const base = apiBase ? `${apiBase}/artwork/${playerNumber}` : `/artwork/${playerNumber}`;
+  const src = `${base}?cb=${cacheBuster}`;
 
   return (
     <Box>

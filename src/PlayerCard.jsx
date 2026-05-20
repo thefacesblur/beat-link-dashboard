@@ -108,7 +108,7 @@ function PlayerStatusIndicator({ online }) {
   );
 }
 
-export default function PlayerCard({ player }) {
+export default function PlayerCard({ player, apiBase = '' }) {
   return (
     <Card sx={{ width: '100%', maxWidth: 600, minWidth: 300, backgroundColor: 'background.paper', margin: '0 auto', borderRadius: 3 }}>
       <CardContent>
@@ -120,11 +120,11 @@ export default function PlayerCard({ player }) {
           {getPlayerStatus(player)}
         </Typography>
         <Box display="flex" gap={2} alignItems="center" mb={2}>
-          <AlbumArt playerNumber={player.number} player={player} />
+          <AlbumArt playerNumber={player.number} player={player} apiBase={apiBase} />
           <TrackMetadata track={player.track} player={player} />
         </Box>
         <Box width="100%" mt={2} mb={1}>
-          <WaveformPreview playerNumber={player.number} player={player} />
+          <WaveformPreview playerNumber={player.number} player={player} apiBase={apiBase} />
         </Box>
         <TrackProgressBar
           timePlayedMs={player['time-played']?.['raw-milliseconds']}

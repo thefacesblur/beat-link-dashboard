@@ -3,3 +3,5 @@ node_modules
 .lsp
 .claude
 api-server/target/uberjar/classes/*
+dist/
+src/eslint.config.mjs
