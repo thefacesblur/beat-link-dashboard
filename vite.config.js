@@ -2,19 +2,31 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  build: {
-    outDir: '../resources/beat_link_trigger/public',
-    emptyOutDir: true,
-  },
+  base: mode === 'srs-embed' ? '/blt/' : '/',
+  build: mode === 'srs-embed'
+    ? {
+        outDir: 'dist',
+        emptyOutDir: true,
+        lib: {
+          entry: resolve(__dirname, 'src/embed.jsx'),
+          formats: ['iife'],
+          name: 'BeatLinkDashboard',
+          fileName: () => 'beat-link-dashboard.js',
+        },
+        cssCodeSplit: false,
+      }
+    : {
+        outDir: '../resources/beat_link_trigger/public',
+        emptyOutDir: true,
+      },
   server: {
     host: true,
     port: 5173,
     open: true,
     allowedHosts: ['127.0.0.1', 'localhost'],
     proxy: {
-      // Proxy API requests to the backend overlay server
       '/params.json': 'http://localhost:17081',
       '/artwork': 'http://localhost:17081',
       '/wave-preview': 'http://localhost:17081',
@@ -26,4 +38,4 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-}); 
+}));

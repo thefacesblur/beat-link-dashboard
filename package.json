@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:embed": "vite build --mode srs-embed",
     "preview": "vite preview"
   },
   "dependencies": {
